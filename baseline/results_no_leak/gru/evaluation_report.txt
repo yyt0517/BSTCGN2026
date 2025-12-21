@@ -1,0 +1,30 @@
+================================================================================
+GRU Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 174.78s
+
+Test Set Results:
+  Accuracy:    0.947408
+  Macro F1:    0.882190
+  Weighted F1: 0.948058
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.8939    0.9672    0.9291        61
+     HTTPFlood     0.9906    0.9804    0.9855      4086
+     ICMPFlood     0.9397    0.8882    0.9132      1825
+      SYNFlood     0.9289    0.9754    0.9516      1340
+       SYNScan     0.6681    0.7059    0.6865       442
+   SlowrateDoS     0.9677    0.9611    0.9644      1620
+TCPConnectScan     0.7430    0.7302    0.7366       582
+      UDPFlood     0.9880    0.9809    0.9845      5616
+       UDPScan     0.7230    0.8668    0.7884       533
+
+      accuracy                         0.9474     16105
+     macro avg     0.8714    0.8951    0.8822     16105
+  weighted avg     0.9495    0.9474    0.9481     16105

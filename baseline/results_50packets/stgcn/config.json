@@ -1,0 +1,5 @@
+{
+  "model": "STGCN",
+  "type": "Spatio-Temporal",
+  "random_seed": 42
+}

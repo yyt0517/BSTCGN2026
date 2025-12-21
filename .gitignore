@@ -1,0 +1,178 @@
+# ==================== Python ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==================== Jupyter Notebook ====================
+.ipynb_checkpoints
+*.ipynb
+
+# ==================== 环境 ====================
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+conda-meta/
+
+# ==================== IDE ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ==================== 原始数据（大文件）====================
+# 5G-NIDD原始数据集
+5G-NIDD-raw/
+5G-NIDD-cleaned/
+5G_NIDD_TIME_SERIES/
+
+# 处理后的数据文件（.npy和.pkl很大）
+# 排除所有处理后的数据文件
+data/processed/**/*.npy
+data/processed/**/*.pkl
+data/processed/**/*.bin
+data/fdg/*.csv
+data/fdg/*.pkl
+
+# 但保留metadata和README
+!data/processed/raw_packet_sequences/metadata.pkl
+!data/processed/*/README.md
+!data/processed/**/README.md
+
+# ==================== 模型文件（大文件）====================
+# PyTorch模型
+*.pth
+*.pt
+
+# 其他模型格式
+*.h5
+*.hdf5
+*.ckpt
+*.safetensors
+
+# 模型检查点目录
+checkpoints/
+baseline/models/
+
+# 但保留最终的最佳模型（可选）
+# !baseline/results/hybrid_model_fixed/best_model.pth
+
+# ==================== 日志文件 ====================
+logs/
+*.log
+*.log.*
+
+# 但保留logs目录结构
+!logs/.gitkeep
+
+# ==================== 结果文件 ====================
+# GNN实验结果（早期实验）
+results/
+
+# 基线结果中的大文件
+baseline/results/*/predictions.npy
+baseline/results/*/confusion_matrix.npy
+baseline/results/*/pattern_weights.npy
+baseline/results/*/*.pth
+baseline/results/*/*.pt
+
+# 但保留评估报告和配置
+!baseline/results/*/evaluation_report.txt
+!baseline/results/*/config.json
+!baseline/results/*/per_class_metrics.csv
+!baseline/results/*.png
+!baseline/results/*.md
+
+# ==================== 参考文献（PDF）====================
+reference/*.pdf
+
+# 但保留README
+!reference/README.md
+
+# ==================== 归档（旧代码）====================
+archive/
+
+# ==================== 临时文件 ====================
+*.tmp
+*.bak
+*.swp
+*.cache
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==================== 数据分析临时文件 ====================
+*.csv.gz
+*.parquet
+*.feather
+
+# ==================== 可视化临时文件 ====================
+*.png.bak
+*.jpg.bak
+*.svg.bak
+
+# ==================== 测试文件 ====================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ==================== 文档构建 ====================
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# ==================== 其他 ====================
+# 备份文件
+backup_*/
+*_backup/
+*.backup
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 配置文件（可能包含敏感信息）
+config.ini
+secrets.yaml
+credentials.json
+
+# 但保留示例配置
+!config.example.ini
+!config.template.yaml
+

@@ -1,0 +1,30 @@
+================================================================================
+MLP Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 24.69s
+
+Test Set Results:
+  Accuracy:    0.502441
+  Macro F1:    0.541114
+  Weighted F1: 0.504129
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.9811    0.8667    0.9204        60
+     HTTPFlood     0.7261    0.5567    0.6302       300
+     ICMPFlood     0.4238    0.5117    0.4636       299
+      SYNFlood     0.5269    0.4567    0.4893       300
+       SYNScan     0.4919    0.4033    0.4432       300
+   SlowrateDoS     0.3974    0.4000    0.3987       300
+TCPConnectScan     0.4622    0.5719    0.5112       299
+      UDPFlood     0.4600    0.4600    0.4600       300
+       UDPScan     0.5238    0.5867    0.5535       300
+
+      accuracy                         0.5024      2458
+     macro avg     0.5548    0.5348    0.5411      2458
+  weighted avg     0.5133    0.5024    0.5041      2458

@@ -1,0 +1,30 @@
+================================================================================
+CNN1D Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 5.63s
+
+Test Set Results:
+  Accuracy:    0.772579
+  Macro F1:    0.794224
+  Weighted F1: 0.775032
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     1.0000    0.9833    0.9916        60
+     HTTPFlood     0.9715    0.7967    0.8755       300
+     ICMPFlood     0.7070    0.8395    0.7676       299
+      SYNFlood     0.9227    0.6767    0.7808       300
+       SYNScan     0.6103    0.7933    0.6899       300
+   SlowrateDoS     0.9068    0.9400    0.9231       300
+TCPConnectScan     0.6076    0.6421    0.6244       299
+      UDPFlood     0.8027    0.8000    0.8013       300
+       UDPScan     0.7443    0.6500    0.6940       300
+
+      accuracy                         0.7726      2458
+     macro avg     0.8081    0.7913    0.7942      2458
+  weighted avg     0.7895    0.7726    0.7750      2458

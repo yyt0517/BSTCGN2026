@@ -1,0 +1,10 @@
+Label,Attack Type,Category,Count,Percentage,Imbalance_Ratio
+0,Benign,Normal,2563,71.17,Baseline
+1,HTTPFlood,Flood Attack,269,7.47,1:9.53
+2,ICMPFlood,Flood Attack,0,0.0,N/A
+3,SYNFlood,Flood Attack,3,0.08,1:854.33
+4,SYNScan,Scan Attack,38,1.06,1:67.45
+5,SlowrateDoS,Flood Attack,601,16.69,1:4.26
+6,UDPLagScan,Scan Attack,41,1.14,1:62.51
+7,UDPFlood,Flood Attack,25,0.69,1:102.52
+8,UDPScan,Scan Attack,61,1.69,1:42.02

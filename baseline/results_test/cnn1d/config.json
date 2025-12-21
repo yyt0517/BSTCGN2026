@@ -1,0 +1,5 @@
+{
+  "model": "CNN1D",
+  "type": "Temporal",
+  "random_seed": 42
+}

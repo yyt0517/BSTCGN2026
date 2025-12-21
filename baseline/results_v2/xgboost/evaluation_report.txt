@@ -1,0 +1,30 @@
+================================================================================
+XGBoost Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 86.25s
+
+Test Set Results:
+  Accuracy:    0.871440
+  Macro F1:    0.882205
+  Weighted F1: 0.870798
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     1.0000    1.0000    1.0000        60
+     HTTPFlood     0.9833    0.9800    0.9816       300
+     ICMPFlood     0.7742    0.8829    0.8250       299
+      SYNFlood     1.0000    0.9967    0.9983       300
+       SYNScan     0.7154    0.6033    0.6546       300
+   SlowrateDoS     0.9967    0.9933    0.9950       300
+TCPConnectScan     0.6580    0.7659    0.7079       299
+      UDPFlood     0.9801    0.9833    0.9817       300
+       UDPScan     0.8605    0.7400    0.7957       300
+
+      accuracy                         0.8714      2458
+     macro avg     0.8853    0.8828    0.8822      2458
+  weighted avg     0.8743    0.8714    0.8708      2458

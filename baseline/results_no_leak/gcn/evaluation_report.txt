@@ -1,0 +1,30 @@
+================================================================================
+GCN Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 182.59s
+
+Test Set Results:
+  Accuracy:    0.919156
+  Macro F1:    0.838478
+  Weighted F1: 0.922552
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.8507    0.9344    0.8906        61
+     HTTPFlood     0.9831    0.9652    0.9741      4086
+     ICMPFlood     0.9265    0.8285    0.8747      1825
+      SYNFlood     0.9378    0.9343    0.9361      1340
+       SYNScan     0.5435    0.5792    0.5608       442
+   SlowrateDoS     0.9108    0.9512    0.9306      1620
+TCPConnectScan     0.6114    0.7921    0.6901       582
+      UDPFlood     0.9914    0.9437    0.9670      5616
+       UDPScan     0.6030    0.9006    0.7223       533
+
+      accuracy                         0.9192     16105
+     macro avg     0.8176    0.8699    0.8385     16105
+  weighted avg     0.9299    0.9192    0.9226     16105

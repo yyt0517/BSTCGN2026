@@ -1,0 +1,5 @@
+{
+  "model": "TCN",
+  "type": "Temporal",
+  "random_seed": 42
+}

@@ -1,0 +1,30 @@
+================================================================================
+TCN Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 4.51s
+
+Test Set Results:
+  Accuracy:    0.652970
+  Macro F1:    0.682614
+  Weighted F1: 0.653295
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.9677    1.0000    0.9836        60
+     HTTPFlood     0.9176    0.7800    0.8432       300
+     ICMPFlood     0.5619    0.6221    0.5905       299
+      SYNFlood     0.6506    0.5400    0.5902       300
+       SYNScan     0.5571    0.4067    0.4701       300
+   SlowrateDoS     0.9038    0.7833    0.8393       300
+TCPConnectScan     0.5206    0.7191    0.6039       299
+      UDPFlood     0.5465    0.7833    0.6438       300
+       UDPScan     0.6527    0.5200    0.5788       300
+
+      accuracy                         0.6530      2458
+     macro avg     0.6976    0.6838    0.6826      2458
+  weighted avg     0.6714    0.6530    0.6533      2458

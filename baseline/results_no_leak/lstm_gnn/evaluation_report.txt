@@ -1,0 +1,30 @@
+================================================================================
+LSTM+GNN Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 280.45s
+
+Test Set Results:
+  Accuracy:    0.951692
+  Macro F1:    0.891615
+  Weighted F1: 0.952538
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     1.0000    0.9016    0.9483        61
+     HTTPFlood     0.9870    0.9856    0.9863      4086
+     ICMPFlood     0.9418    0.8860    0.9130      1825
+      SYNFlood     0.9600    0.9843    0.9720      1340
+       SYNScan     0.6889    0.7014    0.6951       442
+   SlowrateDoS     0.9740    0.9716    0.9728      1620
+TCPConnectScan     0.7428    0.7938    0.7674       582
+      UDPFlood     0.9926    0.9792    0.9858      5616
+       UDPScan     0.7127    0.8705    0.7838       533
+
+      accuracy                         0.9517     16105
+     macro avg     0.8889    0.8971    0.8916     16105
+  weighted avg     0.9542    0.9517    0.9525     16105

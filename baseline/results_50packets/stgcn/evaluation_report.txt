@@ -1,0 +1,30 @@
+================================================================================
+STGCN Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 8550.94s
+
+Test Set Results:
+  Accuracy:    0.968083
+  Macro F1:    0.920131
+  Weighted F1: 0.968461
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.9587    0.9667    0.9627       120
+     HTTPFlood     0.9900    0.9971    0.9935      8170
+     ICMPFlood     0.9754    0.9029    0.9378      3646
+      SYNFlood     0.9928    0.9772    0.9849      2675
+       SYNScan     0.7582    0.7850    0.7714       879
+   SlowrateDoS     0.9804    0.9898    0.9851      3237
+TCPConnectScan     0.8259    0.8017    0.8136      1160
+      UDPFlood     0.9963    0.9945    0.9954     11228
+       UDPScan     0.7578    0.9341    0.8368      1062
+
+      accuracy                         0.9681     32177
+     macro avg     0.9151    0.9277    0.9201     32177
+  weighted avg     0.9698    0.9681    0.9685     32177

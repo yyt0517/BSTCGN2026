@@ -1,0 +1,195 @@
+# 5G-NIDD Feature Dependency Graph (FDG) v1.0 Manifest
+# 版本化配置文件，确保可复现性
+
+version: "1.0"
+created_date: "2024-12-28"
+data_source: "5G-NIDD-cleaned/BTS1_BTS2_cleaned.csv"
+total_records: 1215890
+
+# 节点配置
+nodes:
+  total_count: 41
+  connected_count: 31
+  isolated_count: 10
+  categories: 12
+  
+  # 节点类别分布
+  category_distribution:
+    tcp: 6          # TCP特征
+    bytes: 5        # 字节统计
+    network_id: 5   # 基础网络标识
+    network: 4      # 网络层特征
+    other: 4        # 其他特征
+    rate: 3         # 速率统计
+    time: 3         # 时间特征
+    packets: 3      # 数据包统计
+    state: 3        # 连接状态
+    load: 2         # 负载统计
+    qos: 1          # 5G QoS标记
+    gap: 1          # 间隔统计
+    loss: 1         # 丢包统计
+  
+  # 孤立节点列表（需要后续处理）
+  isolated_nodes:
+    - "AckDat"      # TCP标志，样本不足
+    - "DstAddr"     # 目标地址，高基数
+    - "Flgs"        # 流标志，统计不显著
+    - "IdleTime"    # 空闲时间，防泄露
+    - "LastTime"    # 结束时间，防泄露
+    - "SrcAddr"     # 源地址，高基数
+    - "SrcGap"      # 源间隔，样本不足
+    - "StartTime"   # 开始时间，防泄露
+    - "SynAck"      # TCP标志，样本不足
+    - "sIpId"       # IP标识，稳定性差
+
+# 边配置
+edges:
+  total_count: 46
+  edge_types: 5
+  conditional_edges: 25  # 54.3%
+  
+  # 边类型分布
+  type_distribution:
+    MATHEMATICAL_DIV: 10      # 21.7% - 数学除法关系
+    STATE_BEHAVIOR: 9         # 19.6% - 状态行为关系
+    CORRELATED: 7             # 15.2% - 强相关关系
+    CROSS_LAYER: 6            # 13.0% - 跨层关系
+    PROTOCOL_FEATURE: 4       # 8.7% - 协议特征关系
+    MATHEMATICAL_SUM: 4       # 8.7% - 数学加法关系
+    PROTOCOL_QOS: 4           # 8.7% - 协议QoS关系
+    PROTOCOL_CONSTRAINT: 2    # 4.3% - 协议约束关系
+
+# 权重计算配置
+weight_formula:
+  formula: "w_final = α_type × s_strength × s_support × s_stability × s_context"
+  
+  # 边型先验权重 (α_type)
+  alpha_type:
+    mathematical: 1.0         # 数学恒等式
+    correlated: 0.9          # 强相关关系
+    protocol: 0.7            # 协议语义关系
+    state_behavior: 0.6      # 状态行为关系
+    cross_layer: 0.5         # 跨层弱关系
+  
+  # 支持度因子公式
+  support_factor: "s_support = min(1, log(1+N/1000))"
+  
+  # 稳定性配置
+  stability_config:
+    method: "bootstrap"
+    iterations: 10
+    threshold: 0.7
+  
+  # 条件化置信度
+  context_confidence:
+    "Proto=SCTP": 1.0        # 5G标准严格
+    "Proto=TCP": 0.6         # 应用多样
+    "Proto=UDP": 0.6         # 应用多样
+    "Proto=ICMP": 0.7        # 相对稳定
+    default: 1.0
+
+# 质量控制阈值
+quality_control:
+  min_weight: 0.3             # 最低权重阈值
+  min_samples: 100            # 最小样本数
+  max_pvalue: 0.05           # 显著性阈值
+  min_stability: 0.7         # 最小稳定性
+  
+  # 实际质量指标
+  actual_metrics:
+    weight_range: [0.3, 1.0]
+    avg_weight: 0.70
+    min_support: 4327
+    max_support: 1215890
+    avg_support: 669761
+    quality_pass_rate: 1.0   # 100%通过
+
+# 统计验证结果
+validation:
+  pearson_correlations:
+    - edge: "TotPkts ↔ TotBytes"
+      r: 0.960
+      p: "<0.001"
+    - edge: "Load ↔ Rate"  
+      r: 0.960
+      p: "<0.001"
+    - edge: "Rate = TotBytes/Dur"
+      r: 0.970
+      p: "<0.001"
+  
+  mathematical_relations:
+    - "SrcPkts + DstPkts = TotPkts"
+    - "SrcBytes + DstBytes = TotBytes"
+    - "SrcBytes / SrcPkts = sMeanPktSz"
+    - "DstBytes / DstPkts = dMeanPktSz"
+    - "TotBytes / Dur = Rate"
+
+# 条件化边配置
+conditional_edges:
+  protocol_conditions:
+    - "Proto=TCP": 7
+    - "Proto=SCTP": 1
+    - "Proto=UDP": 1
+    - "Proto=ICMP": 1
+  
+  numerical_conditions:
+    - "Dur>1e-6": 6          # 防除零
+    - "SrcPkts>0": 2         # 防除零
+    - "DstPkts>0": 2         # 防除零
+  
+  state_conditions:
+    - "State=CON": 1
+    - "State=REQ": 1
+    - "State=FIN": 1
+    - "State=RST": 1
+    - "State=ECO": 1
+
+# 关键5G特征确认
+g5_features:
+  qos_relations:
+    - "Proto → sDSb (PROTOCOL_QOS, weight=0.7, condition=Proto=SCTP)"
+  
+  performance_relations:
+    - "sDSb → Rate (CROSS_LAYER, weight=0.4)"
+    - "sDSb → pLoss (CROSS_LAYER, weight=0.4)"
+
+# 文件信息
+files:
+  nodes_file: "fdg_nodes.csv"
+  edges_file: "fdg_edges.csv"
+  documentation: "../docs/FDG_Files_Documentation.md"
+  design_doc: "../docs/5G-NIDD_Feature_Dependency_Graph_Design.md"
+
+# 下游任务配置
+downstream_tasks:
+  classification:
+    classes: 9              # 8种攻击 + 1种良性
+    target_column: "Label"
+  
+  graph_learning:
+    node_features: "sample_values"  # 样本的41维特征向量
+    edge_weights: "weight"
+    heterogeneous: true
+    
+  uncertainty_quantification:
+    structural_uncertainty: "bootstrap_variance"
+    epistemic_uncertainty: "bayesian_head"
+    aleatoric_uncertainty: "data_noise"
+
+# 已知问题和待办事项
+known_issues:
+  - "10个孤立节点影响GNN消息传递效果"
+  - "需要为孤立节点建立连接（类别超边/MI边/端口分箱）"
+  
+todo_items:
+  - "孤立节点连接策略实施"
+  - "关系再核验（速率类边条件检查）"
+  - "DGL/PyG图构建"
+  - "基线模型训练"
+  - "GNN→BNN融合实现"
+
+# 版本控制
+git_commit: "待填入"
+checksum:
+  nodes_file: "待计算"
+  edges_file: "待计算"

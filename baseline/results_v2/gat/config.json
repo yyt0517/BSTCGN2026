@@ -1,0 +1,5 @@
+{
+  "model": "GAT",
+  "type": "Graph",
+  "random_seed": 42
+}

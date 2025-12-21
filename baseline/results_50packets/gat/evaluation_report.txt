@@ -1,0 +1,30 @@
+================================================================================
+GAT Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 507.90s
+
+Test Set Results:
+  Accuracy:    0.958231
+  Macro F1:    0.900753
+  Weighted F1: 0.959384
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     0.9280    0.9667    0.9469       120
+     HTTPFlood     0.9943    0.9898    0.9921      8170
+     ICMPFlood     0.9702    0.8747    0.9199      3646
+      SYNFlood     0.9770    0.9828    0.9799      2675
+       SYNScan     0.6928    0.7235    0.7078       879
+   SlowrateDoS     0.9746    0.9849    0.9797      3237
+TCPConnectScan     0.7836    0.8086    0.7959      1160
+      UDPFlood     0.9965    0.9835    0.9900     11228
+       UDPScan     0.6836    0.9482    0.7945      1062
+
+      accuracy                         0.9582     32177
+     macro avg     0.8890    0.9181    0.9008     32177
+  weighted avg     0.9626    0.9582    0.9594     32177

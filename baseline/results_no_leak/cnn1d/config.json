@@ -1,0 +1,9 @@
+{
+  "model": "CNN1D",
+  "type": "Temporal",
+  "batch_size": 64,
+  "learning_rate": 0.001,
+  "weight_decay": 1e-05,
+  "random_seed": 42,
+  "data_split": "70:15:15 (train:val:test)"
+}

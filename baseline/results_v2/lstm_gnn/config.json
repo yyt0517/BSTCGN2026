@@ -1,0 +1,5 @@
+{
+  "model": "LSTM+GNN",
+  "type": "Spatio-Temporal",
+  "random_seed": 42
+}

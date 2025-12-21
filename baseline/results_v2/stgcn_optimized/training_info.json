@@ -1,0 +1,9 @@
+{
+  "train_time_seconds": 104.952476978302,
+  "train_time_minutes": 1.7492079496383668,
+  "best_epoch": 17,
+  "best_val_f1": 0.7469929675119944,
+  "test_accuracy": 0.7058584214808787,
+  "test_macro_f1": 0.7356121950545744,
+  "test_weighted_f1": 0.710701744437103
+}

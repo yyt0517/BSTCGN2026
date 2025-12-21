@@ -1,0 +1,5 @@
+{
+  "model": "GCN",
+  "type": "Graph",
+  "random_seed": 42
+}

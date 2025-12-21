@@ -1,0 +1,73 @@
+5G-NIDD数据集清理后保留的特征列表
+==================================================
+总特征数: 41
+数据记录数: 1,215,890
+
+基础网络标识 (5个):
+  - SrcAddr
+  - DstAddr
+  - Proto
+  - Sport
+  - Dport
+
+时间特征 (3个):
+  - StartTime
+  - LastTime
+  - Dur
+
+数据包统计 (3个):
+  - TotPkts
+  - SrcPkts
+  - DstPkts
+
+字节统计 (5个):
+  - TotBytes
+  - SrcBytes
+  - DstBytes
+  - sMeanPktSz
+  - dMeanPktSz
+
+5G QoS标记 (1个):
+  - sDSb
+
+网络层特征 (4个):
+  - sTtl
+  - dTtl
+  - sHops
+  - sIpId
+
+TCP标志位 (4个):
+  - TcpOpt
+  - TcpRtt
+  - SynAck
+  - AckDat
+
+负载统计 (2个):
+  - SrcLoad
+  - Load
+
+丢包统计 (1个):
+  - pLoss
+
+速率统计 (3个):
+  - SrcRate
+  - DstRate
+  - Rate
+
+窗口统计 (2个):
+  - SrcWin
+  - DstWin
+
+间隔统计 (1个):
+  - SrcGap
+
+连接状态 (3个):
+  - State
+  - Dir
+  - Cause
+
+其他特征 (4个):
+  - Flgs
+  - Seq
+  - IdleTime
+  - Offset

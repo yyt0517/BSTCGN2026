@@ -1,0 +1,23 @@
+{
+  "model": "STGCN (\u901f\u5ea6\u4f18\u5316\u7248)",
+  "type": "Spatio-Temporal",
+  "batch_size": 64,
+  "num_epochs": 50,
+  "learning_rate": 0.001,
+  "weight_decay": 1e-05,
+  "patience": 15,
+  "hidden_channels": [
+    64,
+    128
+  ],
+  "dropout": 0.2,
+  "use_amp": true,
+  "random_seed": 42,
+  "speed_optimizations": [
+    "Mixed Precision Training (AMP)",
+    "Optimized DataLoader (pin_memory, num_workers, persistent_workers)",
+    "Non-blocking data transfer",
+    "zero_grad(set_to_none=True)"
+  ],
+  "note": "\u5b8c\u5168\u4fdd\u6301\u539f\u59cb\u6a21\u578b\u67b6\u6784\u548c\u8d85\u53c2\u6570\uff0c\u4ec5\u4f18\u5316\u8bad\u7ec3\u901f\u5ea6"
+}

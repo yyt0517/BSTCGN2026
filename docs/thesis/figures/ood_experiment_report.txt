@@ -1,0 +1,26 @@
+
+================================================================================
+Leave-One-Out OOD Detection Experiment Report
+OOD Class: SlowrateDoS
+================================================================================
+
+1. ID Classification Performance (8 classes)
+   - Accuracy: 0.9544
+   - Macro F1: 0.8803
+
+2. OOD Detection Performance
+   - AUROC: 0.8106
+   - AUPR: 0.7346
+   - FPR@95TPR: 0.6330
+
+3. Uncertainty Statistics
+   - ID samples:  0.0088 ¡À 0.0271
+   - OOD samples: 0.0437 ¡À 0.0580
+   - Separation ratio: 4.98x
+
+4. Dataset Statistics
+   - Training samples: 135,050
+   - ID test samples: 28,940
+   - OOD test samples: 21,577
+
+================================================================================

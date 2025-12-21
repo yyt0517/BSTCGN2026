@@ -1,0 +1,5 @@
+{
+  "model": "GRU",
+  "type": "Temporal",
+  "random_seed": 42
+}

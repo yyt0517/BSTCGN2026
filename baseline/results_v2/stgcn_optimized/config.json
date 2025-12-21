@@ -1,0 +1,25 @@
+{
+  "model": "STGCN (\u4f18\u5316\u7248)",
+  "batch_size": 64,
+  "num_epochs": 100,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "patience": 20,
+  "warmup_epochs": 5,
+  "label_smoothing": 0.05,
+  "hidden_channels": [
+    64,
+    128
+  ],
+  "dropout": 0.2,
+  "k_neighbors": 10,
+  "use_amp": true,
+  "random_seed": 42,
+  "optimizations": [
+    "Mixed Precision Training (AMP)",
+    "Cosine Warmup LR Schedule",
+    "Label Smoothing + Class Weights",
+    "Optimized DataLoader (pin_memory, num_workers)",
+    "Gradient Clipping"
+  ]
+}

@@ -1,0 +1,32 @@
+layers:
+  layer1:
+    activation: always_active
+    count: 16
+    description: 数学关系和协议约束，始终激活
+    name: 基础激活
+    types:
+    - MATHEMATICAL_*
+    - PROTOCOL_CONSTRAINT
+  layer2:
+    activation: co_occurrence_rate
+    count: 7
+    description: 相关关系，基于共现率激活
+    name: 共现激活
+    types:
+    - CORRELATED
+  layer3:
+    activation: conditional
+    count: 109
+    description: 状态和类别关系，条件激活
+    name: 条件激活
+    types:
+    - STATE_BEHAVIOR
+    - CATEGORY_*
+parameters:
+  a: 0.0
+  b: 1.0
+  description: 先验强度映射参数
+statistics:
+  edge_types_covered: 12
+  edges_with_rules: 132
+  total_edges: 132

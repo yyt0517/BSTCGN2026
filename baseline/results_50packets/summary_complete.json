@@ -1,0 +1,67 @@
+{
+  "CNN1D": {
+    "accuracy": 0.943718,
+    "macro_f1": 0.877399,
+    "weighted_f1": 0.944673,
+    "train_time": 424.5,
+    "type": "Temporal"
+  },
+  "GRU": {
+    "accuracy": 0.967958,
+    "macro_f1": 0.920165,
+    "weighted_f1": 0.968086,
+    "train_time": 348.84,
+    "type": "Temporal"
+  },
+  "TCN": {
+    "accuracy": 0.919446,
+    "macro_f1": 0.842383,
+    "weighted_f1": 0.923554,
+    "train_time": 340.89,
+    "type": "Temporal"
+  },
+  "GCN": {
+    "accuracy": 0.946079,
+    "macro_f1": 0.883962,
+    "weighted_f1": 0.947974,
+    "train_time": 357.19,
+    "type": "Graph"
+  },
+  "GAT": {
+    "accuracy": 0.958231,
+    "macro_f1": 0.900753,
+    "weighted_f1": 0.959384,
+    "train_time": 507.9,
+    "type": "Graph"
+  },
+  "LSTM+GNN": {
+    "accuracy": 0.969171,
+    "macro_f1": 0.920576,
+    "weighted_f1": 0.969491,
+    "train_time": 541.9,
+    "type": "Spatio-Temporal"
+  },
+  "STGCN": {
+    "accuracy": 0.968083,
+    "macro_f1": 0.920131,
+    "weighted_f1": 0.968461,
+    "train_time": 8550.94,
+    "type": "Spatio-Temporal"
+  },
+  "Hybrid": {
+    "accuracy": 0.984088,
+    "macro_f1": 0.954279,
+    "weighted_f1": 0.984145,
+    "train_time": 2060.42,
+    "type": "Spatio-Temporal"
+  },
+  "BSTGCN": {
+    "accuracy": 0.96864219784318,
+    "macro_f1": 0.9272723502660243,
+    "weighted_f1": 0.9272723502660243,
+    "train_time": 0,
+    "type": "Bayesian-ST",
+    "mean_uncertainty": 0.5239830017089844,
+    "uncertainty_error_correlation": 0.21736435650824318
+  }
+}

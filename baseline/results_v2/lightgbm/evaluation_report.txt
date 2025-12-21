@@ -1,0 +1,30 @@
+================================================================================
+LightGBM Evaluation Report (Comprehensive Baselines)
+================================================================================
+
+Data Split: 70:15:15 (train:val:test)
+Random Seed: 42
+
+Training Time: 74.41s
+
+Test Set Results:
+  Accuracy:    0.886493
+  Macro F1:    0.896543
+  Weighted F1: 0.886529
+
+Classification Report:
+                precision    recall  f1-score   support
+
+        Benign     1.0000    1.0000    1.0000        60
+     HTTPFlood     0.9899    0.9833    0.9866       300
+     ICMPFlood     0.8145    0.8662    0.8395       299
+      SYNFlood     1.0000    0.9967    0.9983       300
+       SYNScan     0.7378    0.6567    0.6949       300
+   SlowrateDoS     0.9967    0.9933    0.9950       300
+TCPConnectScan     0.6941    0.7893    0.7387       299
+      UDPFlood     0.9933    0.9833    0.9883       300
+       UDPScan     0.8571    0.8000    0.8276       300
+
+      accuracy                         0.8865      2458
+     macro avg     0.8982    0.8965    0.8965      2458
+  weighted avg     0.8883    0.8865    0.8865      2458

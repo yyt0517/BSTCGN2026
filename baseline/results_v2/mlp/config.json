@@ -1,0 +1,5 @@
+{
+  "model": "MLP",
+  "type": "Non-Temporal",
+  "random_seed": 42
+}
