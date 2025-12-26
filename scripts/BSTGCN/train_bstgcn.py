@@ -865,8 +865,12 @@ def main():
         json.dump(results, f, indent=4)
 
     # 保存预测和不确定性
-    np.save(save_dir / 'test_predictions.npy', test_preds)
+    # 注意: 使用确定性预测作为主要结果 (与论文报告的accuracy/F1一致)
+    # 不确定性来自MC推理 (用于不确定性分析)
+    np.save(save_dir / 'test_predictions.npy', test_preds_det)
     np.save(save_dir / 'test_uncertainties.npy', test_uncertainties)
+    # 同时保存MC预测用于对比分析
+    np.save(save_dir / 'test_predictions_mc.npy', test_preds)
 
     # ==================== 可视化 ====================
     print("\n生成可视化...")
