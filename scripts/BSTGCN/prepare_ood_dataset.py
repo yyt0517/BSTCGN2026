@@ -44,7 +44,7 @@ def prepare_ood_dataset(
 ):
     """
     准备Leave-One-Out OOD数据集
-    
+
     Args:
         input_dir: 原始数据目录
         output_dir: 输出目录
@@ -56,16 +56,32 @@ def prepare_ood_dataset(
     print("Prepare Leave-One-Out OOD Dataset".center(80))
     print(f"OOD Class: {OOD_CLASS_NAME} (label={OOD_CLASS_LABEL})".center(80))
     print("=" * 80)
-    
+
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 加载原始数据
+
+    # 加载原始数据 (支持单文件或分割文件格式)
     print(f"\n[1/5] 加载原始数据: {input_dir}")
-    X = np.load(input_dir / 'sequences.npy')
-    y = np.load(input_dir / 'labels.npy')
-    
+
+    # 检查是否存在单一的 sequences.npy 文件
+    if (input_dir / 'sequences.npy').exists():
+        X = np.load(input_dir / 'sequences.npy')
+        y = np.load(input_dir / 'labels.npy')
+    else:
+        # 加载已分割的数据并合并
+        print("  检测到分割数据格式，正在合并...")
+        train_seq = np.load(input_dir / 'train_sequences.npy')
+        train_labels = np.load(input_dir / 'train_labels.npy')
+        val_seq = np.load(input_dir / 'val_sequences.npy')
+        val_labels = np.load(input_dir / 'val_labels.npy')
+        test_seq = np.load(input_dir / 'test_sequences.npy')
+        test_labels = np.load(input_dir / 'test_labels.npy')
+
+        X = np.concatenate([train_seq, val_seq, test_seq], axis=0)
+        y = np.concatenate([train_labels, val_labels, test_labels], axis=0)
+        print(f"  合并后总样本数: {len(X):,}")
+
     with open(input_dir / 'metadata.pkl', 'rb') as f:
         metadata = pickle.load(f)
     
