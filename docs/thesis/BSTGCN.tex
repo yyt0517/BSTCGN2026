@@ -21,7 +21,7 @@
 
 \begin{document}
 
-\title{Bayesian Spatiotemporal Graph Neural Networks for Trustworthy Intrusion Detection in 5G/6G Networks}
+\title{Stateless and Trustworthy: Bayesian Spatiotemporal Graph Learning for Risk-Aware Intrusion Detection in 5G/6G}
 
 \author{ Name,~\IEEEmembership{Student Member,~IEEE,}
          Name,~\IEEEmembership{Fellow,~IEEE}
@@ -32,7 +32,7 @@
 
 % The paper headers
 \markboth{IEEE Transactions on Information Forensics and Security,~Vol.~XX, No.~X, [Month]~2026}%
-{Author \MakeLowercase{\textit{et al.}}: Bayesian Spatiotemporal Graph Neural Networks for Trustworthy Intrusion Detection}
+{Author \MakeLowercase{\textit{et al.}}: Stateless and Trustworthy: Bayesian Spatiotemporal Graph Learning for Risk-Aware Intrusion Detection in 5G/6G}
 
 %\IEEEpubid{1556-6013~\copyright~2026 IEEE}
 % Remember, if you use this you must call \IEEEpubidadjcol in the second
@@ -41,6 +41,7 @@
 \maketitle
 
 \begin{abstract}
+5G traffic is highly bursty and dominated by short-lived flows. As a result, flow-stateful intrusion detection becomes costly at scale and often requires additional observation time before reliable flow-level features can be computed. Furthermore, deployment environments often deviate from training distributions, where deterministic neural detectors can be confidently wrong. This paper presents BSTGCN (bayesian spatiotemporal graph convolutional network), a stateless packet-level spatiotemporal graph learning framework with Bayesian inference that elevates intrusion detection from label prediction to risk-aware decision support. BSTGCN operates on packet windows without maintaining flow state, captures packet-to-packet dependencies through dynamic graph representations, and quantifies predictive uncertainty to provide calibrated confidence and robust alert triage under distribution shift. Experiments on the 5G-NIDD dataset demonstrate competitive detection accuracy together with markedly improved calibration and out-of-distribution (OOD) detection, enabling more reliable alert triage and risk-aware operation.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -48,33 +49,34 @@ Intrusion detection, Bayesian neural networks, graph neural networks, spatiotemp
 \end{IEEEkeywords}
 
 \section{Introduction}
-\IEEEPARstart{T}{he} evolution toward sixth-generation (6G) mobile networks demands a paradigm shift in intrusion detection: from optimizing prediction accuracy to ensuring prediction trustworthiness. According to the ITU-R IMT-2030 vision~\cite{ITU_IMT2030_2023} and IMT-2030(6G) Promotion Group white papers~\cite{IMT2030_6G_WhitePaper_2021}, 6G networks will adopt AI-native architectures where security functions such as anomaly detection and threat identification are deeply integrated into wireless access, core networks, and edge computing layers. Under zero-trust architecture (ZTA)~\cite{NIST-ZTA}, where the core principle is ``never trust, always verify,'' an IDS must output not merely a predicted label $\hat{y}$, but a risk-aware decision tuple $(\hat{y}, R(\mathbf{x}))$, where $R(\mathbf{x})$ is a mathematically rigorous risk score that supports continuous verification, alert prioritization, and human-in-the-loop review.
+\IEEEPARstart{T}{he} evolution toward sixth-generation (6G) mobile networks demands a paradigm shift in intrusion detection: from optimizing prediction accuracy to ensuring prediction trustworthiness. According to the ITU-R IMT-2030 vision~\cite{ITU_IMT2030_2023} and IMT-2030 (6G) Promotion Group white papers~\cite{IMT2030_6G_WhitePaper_2021}, 6G networks will adopt AI-native architectures where security functions such as anomaly detection and threat identification are deeply integrated into wireless access, core networks, and edge computing layers. Under zero-trust architecture (ZTA)~\cite{NIST-ZTA}, where the core principle is ``never trust, always verify,'' an IDS must output not merely a predicted label $\hat{y}$, but a risk-aware decision tuple $(\hat{y}, R(\mathbf{x}))$, where $R(\mathbf{x})$ is a mathematically rigorous risk score that supports continuous verification, alert prioritization, and human-in-the-loop review.
 
-This paper proposes BSTGCN (Bayesian Spatiotemporal Graph Convolutional Network), a trustworthy intrusion detection framework that realizes this risk-aware output through two synergistic innovations: (1) stateless packet-level spatiotemporal representation that avoids flow table maintenance and captures attack behavior structure, and (2) variational Bayesian inference that provides calibrated, decomposable uncertainty estimates. Together, they upgrade the IDS from a black-box classifier to a risk-aware security decision module suitable for 5G/6G zero-trust architectures.
+This paper proposes BSTGCN, a trustworthy intrusion detection framework that realizes this risk-aware output through two synergistic innovations: (1) stateless packet-level spatiotemporal representation that avoids flow table maintenance and captures attack behavior structure, and (2) variational Bayesian inference that provides calibrated, decomposable uncertainty estimates. Together, they upgrade the IDS from a black-box classifier to a risk-aware security decision module suitable for 5G/6G zero-trust architectures.
 
 \subsection{Motivation and Approach}
 
 Existing deep learning-based IDS achieve over 95\% accuracy on known attack types~\cite{Habeeb_NIDS_AI_Survey_2022,Rabiu_AIDriven_NIDS_Review_2025}, but a fundamental limitation undermines their deployment in zero-trust environments: overconfident misclassification. Deterministic neural networks forcibly map all inputs to known categories and output high-confidence predictions without expressing epistemic uncertainty~\cite{Guo_Calibration_2017,Gal_Uncertainty_2016}. In preliminary experiments on 5G-NIDD using temporal splitting, model accuracy dropped from 95\% to 88\% while average confidence remained above 0.92. For rare attack types ($<$2\% of samples), models achieved F1-scores below 70\% while maintaining 0.85 confidence on incorrect predictions---zero-day attacks misclassified as benign with high confidence bypass security controls entirely, violating the ``never trust'' principle of ZTA.
 
-Traditional IDS face two additional structural failures in 5G/6G scenarios. First, flow-state dependency is unsustainable: most methods rely on per-flow state tables with $O(M)$ complexity for $M$ concurrent flows~\cite{Pekar2021}, but 80\% of 5G flows contain fewer than 10 packets (Section~IV-A), providing insufficient context while imposing prohibitive overhead. Second, black-box outputs are not actionable: a single label $\hat{y}$ provides no basis for risk-based access control or alert prioritization~\cite{NIST-ZTA,Afroogh2024TrustAI}.
+Traditional IDS face two additional structural failures in 5G/6G scenarios. First, flow-state dependency is unsustainable: most methods rely on per-flow state tables with $O(M_{\text{flow}})$ complexity for $M_{\text{flow}}$ concurrent flows~\cite{Pekar2021}, but 80\% of 5G flows contain fewer than 10 packets (Section~IV-A), providing insufficient context while imposing prohibitive overhead. Second, black-box outputs are not actionable: a single label $\hat{y}$ provides no basis for risk-based access control or alert prioritization~\cite{NIST-ZTA,Afroogh2024TrustAI}.
 
-Network attacks exhibit inherent spatiotemporal structure that addresses these limitations. Temporally, attack behaviors manifest as causal processes: port scans show incrementing sequences, DDoS attacks exhibit burst-then-sustain patterns. Spatially, similar attack packets form clusters in feature space. This structure provides our key insight: Bayesian uncertainty becomes reliable when the representation space separates in-distribution (ID) from out-of-distribution (OOD) samples geometrically. Consider the predictive distribution $p(y|\mathbf{x},\mathcal{D}) = \int p(y|\mathbf{x},\mathbf{w}) p(\mathbf{w}|\mathcal{D}) d\mathbf{w}$---epistemic uncertainty should increase in sparse regions. However, if the representation contains shortcut features or noise coupling, OOD samples may appear ``familiar'' (causing overconfidence).
+Network attacks exhibit inherent spatiotemporal structure that addresses these limitations. Temporally, attack behaviors manifest as causal processes: port scans show incrementing sequences, DDoS attacks exhibit burst-then-sustain patterns. Spatially, similar attack packets form clusters in feature space. This structure provides a key insight: Bayesian uncertainty becomes reliable when the representation space separates in-distribution (ID) from out-OOD samples geometrically. Consider the predictive distribution $p(y|\mathbf{x},\mathcal{D}) = \int p(y|\mathbf{x},\Theta) p(\Theta|\mathcal{D}) d\Theta$---epistemic uncertainty should increase in sparse regions. However, if the representation contains shortcut features or noise coupling, OOD samples may appear ``familiar'' (causing overconfidence).
 
 Spatiotemporal graph modeling provides three inductive biases that make epistemic uncertainty trustworthy: (1) causal TCN captures attack processes rather than isolated packets, so distribution shifts appear as ``broken processes''; (2) dynamic KNN graphs make cluster structure explicit, so OOD samples become ``out-of-cluster'' nodes; (3) GNN neighborhood smoothing suppresses noise, so OOD samples lack consistent neighborhood support. Existing methods fail to realize this synergy: RNN/Transformer models ignore spatial clustering~\cite{Habeeb_NIDS_AI_Survey_2022}; GNN methods assume static structures~\cite{lo2022egraphsage,E-ResGAT}; spatiotemporal approaches require flow-level state~\cite{EvolveGCN,TCG-IDS,PPT-GNN}; and all adopt deterministic learning without uncertainty quantification~\cite{BCNN-IDS,Tabarisaadi2024}.
 
 \subsection{Contributions}
 
-We propose BSTGCN, a framework that realizes risk-aware intrusion detection through the synergy of stateless spatiotemporal representation and Bayesian inference. Our contributions are:
+This paper proposes BSTGCN, a framework that realizes risk-aware intrusion detection through the synergy of stateless spatiotemporal representation and Bayesian inference. Our contributions are:
 
-\textbf{(C1) Stateless Spatiotemporal Representation.} We propose a packet-level modeling paradigm that processes packets ordered by global capture timestamp without per-flow state tables. Dynamic KNN graphs capture spatial clustering, while parallel Bayesian TCN and GraphSAGE branches with gated fusion model temporal and spatial dependencies. This design maintains packet-level resolution ($10^{-3}$--$10^{-2}$s) while avoiding $O(M)$ flow table overhead.
+\textbf{(1) Stateless spatiotemporal representation.} A packet-level modeling paradigm is introduced to process packets ordered by global capture timestamps without maintaining per-flow state tables. Dynamic KNN graphs capture spatial clustering, while parallel Bayesian TCN and GraphSAGE branches with gated fusion model temporal and spatial dependencies. This design maintains packet-level resolution ($10^{-3}$--$10^{-2}$s) while avoiding $O(M_{\text{flow}})$ flow table overhead.
 
-\textbf{(C2) Calibrated Variational Inference.} We introduce variational Bayesian inference to spatiotemporal GNNs, enabling decomposition of predictive uncertainty into epistemic and aleatoric components. We define the risk score as expected loss under the posterior:
+\textbf{(2) Calibrated variational inference.} Variational Bayesian inference is incorporated into spatiotemporal GNNs, enabling predictive uncertainty to be decomposed into epistemic and aleatoric components. The risk score is defined as the expected loss under the posterior:
 \begin{equation}
-R(\mathbf{x}) = \mathbb{E}_{\mathbf{w} \sim p(\mathbf{w}|\mathcal{D})} \left[ \mathbb{E}_{y \sim p(y|\mathbf{x},\mathbf{w})} [\ell(y, \hat{y})] \right]
+R(\mathbf{x}) = \mathbb{E}_{\Theta \sim p(\Theta|\mathcal{D})} \left[ \mathbb{E}_{y \sim p(y|\mathbf{x},\Theta)} [\ell(y, \hat{y}(\mathbf{x};\Theta))] \right]
 \end{equation}
-where $\ell$ can incorporate asymmetric costs. KL annealing avoids posterior collapse; adaptive MC sampling reduces inference cost by 60\%.
+where $\hat{y}(\mathbf{x};\Theta)=\arg\max_c p(y=c|\mathbf{x},\Theta)$ is the predicted label given parameters $\Theta$. KL annealing avoids posterior collapse; adaptive MC sampling reduces inference cost by 60\%.
 
-\textbf{(C3) Systematic Evaluation.} We evaluate on 5G-NIDD (125,956 samples, 9 classes) against 10 baselines. BSTGCN achieves 96.74\% accuracy, 91.65\% macro F1, and ECE=0.0041 (51\% better than MC Dropout). For OOD detection via multi-hold-out evaluation, BSTGCN achieves AUROC 0.878$\pm$0.04, outperforming STGCN+MC Dropout (0.856) and XGBoost+Entropy (0.812). Processing the top 20\% of alerts (ranked by risk score) covers 80\% of true attacks.
+\textbf{(3) Systematic evaluation.} Experiments are conducted on 5G-NIDD (125,956 samples, 9 classes) with comparisons against 10 baseline methods.
+ BSTGCN achieves 96.74\% accuracy, 91.65\% macro F1, and ECE=0.0041 (51\% better than MC Dropout). For OOD detection via multi-hold-out evaluation, BSTGCN achieves AUROC 0.878$\pm$0.04, outperforming STGCN+MC Dropout (0.856) and XGBoost+Entropy (0.812). Processing the top 20\% of alerts (ranked by risk score) covers 80\% of true attacks.
 
 The remainder of this paper is organized as follows: Section~II reviews related work. Section~III presents the BSTGCN methodology, including design principles, architecture, and training. Section~IV describes experimental setup. Section~V presents results and analysis. Section~VI discusses implications and limitations. Section~VII concludes.
 
@@ -85,7 +87,7 @@ The remainder of this paper is organized as follows: Section~II reviews related 
 
 GNN-based intrusion detection methods~\cite{Zhong_GNN_IDS_Survey_2024} can be categorized by graph construction granularity. Entity-centric methods~\cite{jiang2020gnn,kisanga2023graph,sun2024gnnids} construct graphs from hosts or processes, suitable for offline attack chain analysis but exhibiting latency when processing raw traffic.
 
-Traffic-centric methods operate at flow-level or packet-level granularity. Flow-level methods construct host communication graphs or flow dependency graphs: E-GraphSAGE~\cite{lo2022egraphsage} and E-ResGAT~\cite{E-ResGAT} use GraphSAGE/GAT for neighbor aggregation; EvolveGCN~\cite{EvolveGCN} and TCG-IDS~\cite{TCG-IDS} model temporal dynamics through GRU-updated weights or temporal graph networks. These methods require flow state tables with $O(M)$ overhead for $M$ concurrent flows, limiting scalability in 5G scenarios where 80\% of flows contain fewer than 10 packets.
+Traffic-centric methods operate at flow-level or packet-level granularity. Flow-level methods construct host communication graphs or flow dependency graphs: E-GraphSAGE~\cite{lo2022egraphsage} and E-ResGAT~\cite{E-ResGAT} use GraphSAGE/GAT for neighbor aggregation; EvolveGCN~\cite{EvolveGCN} and TCG-IDS~\cite{TCG-IDS} model temporal dynamics through GRU-updated weights or temporal graph networks. These methods require flow state tables with $O(M_{\text{flow}})$ overhead for $M_{\text{flow}}$ concurrent flows, limiting scalability in 5G scenarios where 80\% of flows contain fewer than 10 packets.
 
 Packet-level methods~\cite{Graph2vec+RF,GTAE-IDS,PPT-GNN} construct graphs from raw packets for lower-latency detection. However, they still depend on flow extraction (e.g., PPT-GNN uses NetFlow-level features), not achieving true stateless processing. More fundamentally, all existing spatiotemporal graph methods adopt deterministic learning, outputting softmax-normalized scores that do not reflect true model uncertainty~\cite{Guo_Calibration_2017}---a limitation for zero-trust architectures requiring trustworthy AI~\cite{NIST-ZTA}.
 
@@ -103,32 +105,32 @@ Current research exhibits gaps in: (1) structured modeling---Bayesian NIDS ignor
 
 \subsection{Problem Formulation}
 
-We formulate network intrusion detection as a multi-class classification problem with uncertainty quantification. Given a short-term packet window of length $L$ extracted from raw network captures using a sliding window over global packet arrival order, where each packet is characterized by $D$ features, the input is $\mathbf{X} \in \mathbb{R}^{L \times D}$. Note that each window typically contains packets from multiple concurrent network flows, as packets are ordered by capture timestamp rather than grouped by flow identifiers. Our goal is to learn a probabilistic model $p(y|\mathbf{X}, \Theta)$ that predicts the dominant traffic scenario (attack type or benign) $y \in \{1, 2, \ldots, C\}$ (where $C=9$ includes benign traffic and 8 attack types) while quantifying the epistemic uncertainty arising from model parameters $\Theta$.
+This paper formulates network intrusion detection as a multi-class classification problem with uncertainty quantification. Given a short-term packet window of length $L$ extracted from raw network captures using a sliding window over global packet arrival order, where each packet is characterized by $D$ features, the input is $\mathbf{X} \in \mathbb{R}^{L \times D}$. Note that each window typically contains packets from multiple concurrent network flows, as packets are ordered by capture timestamp rather than grouped by flow identifiers. Our goal is to learn a probabilistic model $p(y|\mathbf{X}, \Theta)$ that predicts the dominant traffic scenario (attack type or benign) $y \in \{1, 2, \ldots, C\}$ (where $C=9$ includes benign traffic and 8 attack types) while quantifying the epistemic uncertainty arising from model parameters $\Theta$.
 
 Unlike deterministic models that output a single prediction $\hat{y} = \arg\max_c p(y=c|\mathbf{X}, \hat{\Theta})$ with point-estimated parameters $\hat{\Theta}$, Bayesian models maintain a distribution over parameters $p(\Theta|\mathcal{D})$ given training data $\mathcal{D}$, enabling uncertainty quantification through the predictive distribution:
 \begin{equation}
 p(y|\mathbf{X}, \mathcal{D}) = \int p(y|\mathbf{X}, \Theta) p(\Theta|\mathcal{D}) d\Theta
 \end{equation}
 
-The integral in Eq.~(1) is analytically intractable for deep neural networks because: (a) the posterior distribution $p(\Theta|\mathcal{D})$ has no closed-form solution due to the complex, non-linear likelihood function induced by the network architecture; and (b) the high-dimensional parameter space (typically millions of parameters) makes exact integration computationally infeasible. To address these challenges, we employ variational inference to approximate the true posterior $p(\Theta|\mathcal{D})$ with a tractable variational distribution $q(\Theta)$ (typically factorized Gaussian), and then use Monte Carlo (MC) sampling to estimate the predictive distribution. Specifically, we draw $M$ parameter samples $\{\Theta^{(m)}\}_{m=1}^M$ from $q(\Theta)$ and compute:
+The integral in Eq.~(1) is analytically intractable for deep neural networks because: (a) the posterior distribution $p(\Theta|\mathcal{D})$ has no closed-form solution due to the complex, non-linear likelihood function induced by the network architecture; and (b) the high-dimensional parameter space (typically millions of parameters) makes exact integration computationally infeasible. To address these challenges, variational inference is employed to approximate the true posterior $p(\Theta|\mathcal{D})$ with a tractable variational distribution $q(\Theta)$ (typically factorized Gaussian), and then Monte Carlo (MC) sampling is used to estimate the predictive distribution. Specifically, $M$ parameter samples $\{\Theta^{(m)}\}_{m=1}^M$ are drawn from $q(\Theta)$, and the following quantity is computed:
 \begin{equation}
 p(y|\mathbf{X}, \mathcal{D}) \approx \frac{1}{M} \sum_{m=1}^M p(y|\mathbf{X}, \Theta^{(m)})
 \end{equation}
 
-This MC approximation has convergence rate $O(1/\sqrt{M})$ by the Central Limit Theorem, meaning that the estimation error decreases as we increase the number of samples. In our experiments, we use $M=20$ samples during inference, which provides a good balance between uncertainty estimation accuracy and computational efficiency. The variance of this predictive distribution across the $M$ forward passes serves as a measure of epistemic uncertainty, indicating the model's confidence in its prediction---high variance suggests that the model has seen few similar examples during training and is uncertain about the correct classification.
+Under the Central Limit Theorem, this MC approximation converges rate $O(1/\sqrt{M})$ , implying that the estimation error decreases as the number of samples increases. During inference, $M=20$ samples are used,providing a good balance between uncertainty estimation accuracy and computational efficiency. The variance of this predictive distribution across the $M$ forward passes serves as a measure of epistemic uncertainty, indicating the model's confidence in its prediction---high variance suggests that the model has seen few similar examples during training and is uncertain about the correct classification.
 
 \subsection{Design Principles}
 \label{sec:design_principles}
 
 BSTGCN is guided by four design principles addressing 5G/6G zero-trust IDS requirements:
 
-\textbf{P1: Stateless Observability.} Process packet sequences without per-flow state tables. Flow table maintenance incurs $O(M)$ overhead for $M$ concurrent flows, and 80\% of 5G flows contain $<$10 packets (Section~IV-A), providing insufficient context for flow-based detection.
+\textbf{P1: Stateless Observability.} Process packet sequences without per-flow state tables. Flow table maintenance incurs $O(M_{\text{flow}})$ overhead for $M_{\text{flow}}$ concurrent flows, and 80\% of 5G flows contain $<$10 packets (Section~IV-A), providing insufficient context for flow-based detection.
 
 \textbf{P2: Structure-Preserving Representation.} The learned representation must separate OOD samples into geometrically distinct (low-density) regions. If the representation conflates ID and OOD samples, epistemic uncertainty becomes unreliable---OOD samples may appear ``familiar'' (overconfidence).
 
 \textbf{P3: Decision-Grade Uncertainty.} Uncertainty must be (a) decomposable into epistemic vs. aleatoric components, (b) calibrated, and (c) actionable for security operations. Without decomposition, operators cannot distinguish model unfamiliarity from data noise.
 
-\textbf{P4: Deployable Inference.} Inference cost must be controllable. Standard MC inference with $M=30$ samples multiplies latency by 30$\times$; adaptive sampling reduces this overhead.
+\textbf{P4: Deployable Inference.} Inference cost must be controllable. Standard MC inference with $M=30$ samples multiplies latency by a factor of 30; adaptive sampling reduces this overhead.
 
 \subsection{BSTGCN Architecture}
 
@@ -137,13 +139,13 @@ Fig.~\ref{fig:architecture} illustrates the overall architecture of BSTGCN, whic
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/BSTGCN.jpg}
-\caption{The overall architecture of BSTGCN. (Top) The main pipeline: input packet sequences are encoded by a Transformer encoder to obtain semantic representations, which are then used to construct a dynamic KNN graph. Three Bayesian ST blocks are stacked sequentially to progressively refine the representations. Bayesian aggregation pools node features via gated attention, and a Bayesian classifier outputs final predictions $\hat{y}$, probabilities $\hat{p}$, and epistemic uncertainty $\mathcal{U}_{\text{epi}}$ via MC sampling. (Bottom) Detail of a single Bayesian ST block: within each block, the temporal branch (Bayesian TCN with depthwise convolutions) and the spatial branch (Bayesian GraphSAGE with neighbor aggregation) process the input in parallel. Both branches sample weights from learned variational posteriors $\mathcal{N}(\mu, \sigma^2)$. A gated fusion mechanism with sigmoid gates adaptively combines the temporal features $H_t$ and spatial features $H_s$ to produce the output $H^{(\ell+1)}$.}
+\caption{The overall architecture of BSTGCN. (Top) The main pipeline: input packet sequences are encoded by a Transformer encoder to obtain semantic representations $\mathbf{H}^{(0)}$, which are then used to construct a dynamic KNN graph. Three Bayesian ST blocks ($\ell=1,2,3$) are stacked sequentially to progressively refine the representations. Bayesian aggregation pools node features via gated attention, and a Bayesian classifier outputs final predictions $\hat{y}$, probabilities $\hat{p}$, and epistemic uncertainty $\mathcal{U}_{\text{epi}}$ via MC sampling. (Bottom) Detail of the $\ell$-th Bayesian ST block: input $\mathbf{H}^{(\ell-1)}$ is processed by the temporal branch (Bayesian TCN) and the spatial branch (Bayesian GraphSAGE) in parallel. Both branches sample weights from learned variational posteriors $\mathcal{N}(\mu, \sigma^2)$. A gated fusion mechanism with sigmoid gates adaptively combines temporal features $\mathbf{H}_t^{(\ell)}$ and spatial features $\mathbf{H}_s^{(\ell)}$ with residual connection to produce output $\mathbf{H}^{(\ell)}$.}
 \label{fig:architecture}
 \end{figure*}
 
 \subsubsection{Transformer Encoder for Semantic Representation}
 
-Given a batch of input packet sequences $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ (where $B$ is batch size, $L=50$ is sequence length, $D=25$ is feature dimension), we first apply a linear projection followed by a lightweight Transformer encoder (1 layer, 8 attention heads) to capture global dependencies across the packet sequence and obtain semantic representations:
+Given a batch of input packet sequences $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ (where $B$ is batch size, $L=50$ is sequence length, $D=25$ is feature dimension), a linear projection followed by a lightweight Transformer encoder (1 layer, 8 attention heads) is first applied to capture global dependencies across the packet sequence and obtain semantic representations:
 \begin{equation}
 \mathbf{X}' = \text{TransformerEncoder}(\text{Linear}(\mathbf{X})) \in \mathbb{R}^{B \times L \times d_h}
 \end{equation}
@@ -151,72 +153,73 @@ where $d_h=128$ is the hidden dimension. The Transformer encoder enriches each p
 
 \subsubsection{KNN Graph Builder}
 
-To model spatial relationships between packets, we construct a dynamic K-nearest neighbor (KNN) graph based on cosine similarity in the learned representation space. As shown in Fig.~\ref{fig:architecture}, the KNN Graph Builder takes the semantic features $\mathbf{X}'$ as input and outputs an adjacency matrix $\mathbf{A}$. For each sample in the batch, we compute pairwise cosine similarities:
+To model spatial relationships between packets, a dynamic K-nearest neighbor (KNN) graph is constructed based on cosine similarity in the learned representation space. As shown in Fig.~\ref{fig:architecture}, the KNN Graph Builder takes the semantic features $\mathbf{X}'$ as input and outputs an adjacency matrix $\mathbf{A}$. For each sample $b$ in the batch, pairwise cosine similarities between packets $i$ and $j$ are computed as follows:
 \begin{equation}
-\text{sim}(\mathbf{x}'_i, \mathbf{x}'_j) = \frac{\mathbf{x}'_i \cdot \mathbf{x}'_j}{\|\mathbf{x}'_i\| \|\mathbf{x}'_j\|}
+\text{sim}(\mathbf{x}'_{b,i}, \mathbf{x}'_{b,j}) = \frac{\mathbf{x}'_{b,i} \cdot \mathbf{x}'_{b,j}}{\|\mathbf{x}'_{b,i}\| \|\mathbf{x}'_{b,j}\|}
 \end{equation}
 
-The adjacency matrix $\mathbf{A} \in \mathbb{R}^{B \times L \times L}$ is constructed by connecting each packet to its $k=10$ nearest neighbors:
+The adjacency matrix $\mathbf{A} \in \mathbb{R}^{B \times L \times L}$ is constructed by connecting each packet to its $k=10$ nearest neighbors. For sample $b$, packet $i$:
 \begin{equation}
-\mathbf{A}_{ij} = \begin{cases}
-1, & \text{if } j \in \text{TopK}(\text{sim}(\mathbf{x}'_i, \mathbf{x}'_j), k) \\
+\mathbf{A}_{b,i,j} = \begin{cases}
+1, & \text{if } j \in \text{TopK}(\{\text{sim}(\mathbf{x}'_{b,i}, \mathbf{x}'_{b,j})\}_{j=1}^L, k) \\
 0, & \text{otherwise}
 \end{cases}
 \end{equation}
+and the neighbor set for node $i$ in sample $b$ is $\mathcal{N}_b(i)=\{j:\mathbf{A}_{b,i,j}=1\}$.
 
 The adjacency matrix is then symmetrized: $\mathbf{A} \leftarrow (\mathbf{A} + \mathbf{A}^\top) / 2$. This KNN graph captures spatial clustering: similar packets (e.g., same protocol, similar length) are connected, enabling message passing to aggregate information from related packets. Graph construction is kept deterministic because: (a) KNN search is computationally intensive, and sampling multiple graph structures would be prohibitively expensive; (b) the Bayesian ST blocks will model uncertainty in how information flows through this fixed structure.
 
 \subsubsection{Bayesian Spatiotemporal Blocks}
 
-As shown in the bottom panel of Fig.~\ref{fig:architecture}, the core of BSTGCN consists of $N=3$ stacked Bayesian spatiotemporal (ST) blocks. Each block takes the hidden representation $\mathbf{H}^{(\ell)}$ and the adjacency matrix $\mathbf{A}$ as inputs, and contains two parallel branches---a temporal branch and a spatial branch---followed by a gated fusion mechanism.
+As shown in the bottom panel of Fig.~\ref{fig:architecture}, the core of BSTGCN consists of $N_{\text{blk}}=3$ stacked Bayesian spatiotemporal (ST) blocks. The $\ell$-th block ($\ell=1,\ldots,N_{\text{blk}}$) takes input $\mathbf{H}^{(\ell-1)}$ and produces output $\mathbf{H}^{(\ell)}$, where $\mathbf{H}^{(0)}\triangleq \mathbf{X}'$ is the Transformer encoder output. Each block contains two parallel branches---a temporal branch and a spatial branch---followed by a gated fusion mechanism.
 
 \textbf{Temporal Branch (Bayesian TCN)}: The temporal branch employs Bayesian TCN with detailed depthwise separable convolutions to capture temporal dependencies. For the $\ell$-th ST block with dilation rate $d_\ell = 2^{\ell-1}$ (i.e., $\{1, 2, 4\}$ for three blocks), the temporal branch computes:
 \begin{equation}
-\mathbf{H}_t = \text{BayesianTCN}(\mathbf{H}^{(\ell-1)}), \quad \mathbf{W}_t \sim \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\sigma}_t^2)
+\mathbf{H}_t^{(\ell)} = \text{BayesianTCN}^{(\ell)}(\mathbf{H}^{(\ell-1)}), \quad \mathbf{W}_t^{(\ell)} \sim \mathcal{N}(\boldsymbol{\mu}_t^{(\ell)}, (\boldsymbol{\sigma}_t^{(\ell)})^2)
 \end{equation}
 
-The Bayesian TCN consists of depthwise convolution (applying a separate filter to each channel) followed by pointwise convolution ($1\times1$ convolution for channel mixing). All convolution layers use Bayesian weights sampled from learned variational posteriors $q(\mathbf{W}_t) = \mathcal{N}(\boldsymbol{\mu}, \text{diag}(\boldsymbol{\sigma}_t^2))$. During forward propagation, weights are sampled using the reparameterization trick:
+The Bayesian TCN consists of depthwise convolution (applying a separate filter to each channel) followed by pointwise convolution ($1\times1$ convolution for channel mixing). All convolution layers use Bayesian weights sampled from learned variational posteriors $q(\mathbf{W}_t^{(\ell)}) = \mathcal{N}(\boldsymbol{\mu}_t^{(\ell)}, \text{diag}((\boldsymbol{\sigma}_t^{(\ell)})^2))$. During forward propagation, weights are sampled using the reparameterization trick:
 \begin{equation}
-\mathbf{W}_t = \boldsymbol{\mu} + \boldsymbol{\sigma}_t \odot \boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})
+\mathbf{W}_t^{(\ell)} = \boldsymbol{\mu}_t^{(\ell)} + \boldsymbol{\sigma}_t^{(\ell)} \odot \boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})
 \end{equation}
 
 The dilated causal convolutions ensure that the receptive field grows exponentially with depth, covering approximately 20 packets across three blocks, enabling the model to capture both short-term and long-term temporal patterns.
 
-\textbf{Spatial Branch (Bayesian GraphSAGE).}
-For node $i$, we compute the mean neighbor embedding and update:
+\textbf{Spatial Branch (Bayesian GraphSAGE)}:
+For the $\ell$-th block, the spatial branch computes $\mathbf{H}_s^{(\ell)} = \text{BayesSAGE}^{(\ell)}(\mathbf{H}^{(\ell-1)}, \mathbf{A})$. For each node $i$, the mean neighbor embedding is computed and the representation is updated as follows:
 \begin{equation}
 \bar{\mathbf{h}}_{i}^{(\ell-1)}=\frac{1}{|\mathcal{N}(i)|}\sum_{j\in\mathcal{N}(i)}\mathbf{h}_{j}^{(\ell-1)}.
 \label{eq:sage-neigh}
 \end{equation}
 \begin{equation}
-\mathbf{h}_{i}^{(\ell)}=\sigma\!\left(\mathbf{W}_{\mathrm{self}}^{(\ell)}\mathbf{h}_{i}^{(\ell-1)}
+(\mathbf{h}_s)_{i}^{(\ell)}=\phi\!\left(\mathbf{W}_{\mathrm{self}}^{(\ell)}\mathbf{h}_{i}^{(\ell-1)}
 +\mathbf{W}_{\mathrm{neigh}}^{(\ell)}\bar{\mathbf{h}}_{i}^{(\ell-1)}\right),
 \label{eq:sage-update}
 \end{equation}
-where $\sigma(\cdot)$ denotes GELU and $\mathbf{W}_{\mathrm{self}}^{(\ell)},\mathbf{W}_{\mathrm{neigh}}^{(\ell)}$
+where $\phi(\cdot)$ denotes the GELU activation function ($\sigma$ is reserved for standard deviation parameters throughout) and $\mathbf{W}_{\mathrm{self}}^{(\ell)},\mathbf{W}_{\mathrm{neigh}}^{(\ell)}$
 are Bayesian linear weights.
-We draw $\mathbf{W}^{(\ell)}\sim q(\mathbf{W}^{(\ell)})$, with
+\(\mathbf{W}_s^{(\ell)}\) is sampled from the variational posterior \(q(\mathbf{W}_s^{(\ell)})\), where
 \begin{equation}
-q(\mathbf{W}^{(\ell)})=\mathcal{N}\!\big(\boldsymbol{\mu}^{(\ell)},\mathrm{diag}((\boldsymbol{\sigma}^{(\ell)})^2)\big).
+q(\mathbf{W}_s^{(\ell)})=\mathcal{N}\!\big(\boldsymbol{\mu}_s^{(\ell)},\mathrm{diag}((\boldsymbol{\sigma}_s^{(\ell)})^2)\big).
 \label{eq:sage-posterior}
 \end{equation}
 
 
-We choose GraphSAGE over attention-based methods (e.g., GATv2) for efficiency: GraphSAGE's neighbor aggregation has linear complexity $O(L \cdot k \cdot d_h)$, while attention mechanisms have quadratic complexity $O(L^2 \cdot d_h)$. Since the KNN graph already selects the most relevant neighbors, the additional expressiveness of attention provides diminishing returns while significantly increasing computational cost.
+GraphSAGE is selected over attention-based methods (e.g., GATv2) for efficiency: GraphSAGE's neighbor aggregation has linear complexity $O(L \cdot k \cdot d_h)$, while attention mechanisms have quadratic complexity $O(L^2 \cdot d_h)$. Since the KNN graph already selects the most relevant neighbors, the additional expressiveness of attention provides diminishing returns while significantly increasing computational cost.
 
-\textbf{Gated Fusion}: As illustrated in Fig.~\ref{fig:architecture}, the gated fusion mechanism adaptively balances temporal and spatial information. Given temporal branch output $\mathbf{H}_t$ and spatial branch output $\mathbf{H}_s$, we compute adaptive gates using sigmoid activation:
+\textbf{Gated Fusion}: As illustrated in Fig.~\ref{fig:architecture}, the gated fusion mechanism adaptively balances temporal and spatial information. Given temporal branch output $\mathbf{H}_t^{(\ell)}$ and spatial branch output $\mathbf{H}_s^{(\ell)}$, adaptive gates are computed using sigmoid activation. The gate layers are deterministic (not Bayesian) for computational efficiency:
 \begin{align}
-g_t &= \text{Sigmoid}(\text{Linear}_t(\mathbf{H}^{(\ell-1)})) \\
-g_s &= \text{Sigmoid}(\text{Linear}_s(\mathbf{H}^{(\ell-1)}))
+g_t^{(\ell)} &= \text{Sigmoid}(\text{Linear}_t(\mathbf{H}^{(\ell-1)})) \\
+g_s^{(\ell)} &= \text{Sigmoid}(\text{Linear}_s(\mathbf{H}^{(\ell-1)}))
 \end{align}
 
 The gates are normalized to sum to 1:
 \begin{equation}
-g_t \leftarrow \frac{g_t}{g_t + g_s + \epsilon}, \quad g_s \leftarrow \frac{g_s}{g_t + g_s + \epsilon}
+g_t^{(\ell)} \leftarrow \frac{g_t^{(\ell)}}{g_t^{(\ell)} + g_s^{(\ell)} + \epsilon}, \quad g_s^{(\ell)} \leftarrow \frac{g_s^{(\ell)}}{g_t^{(\ell)} + g_s^{(\ell)} + \epsilon}
 \end{equation}
 where $\epsilon=10^{-8}$ ensures numerical stability. The fused output combines both branches with residual connection:
 \begin{equation}
-\mathbf{H}^{(\ell+1)} = \text{LayerNorm}(g_t \odot \mathbf{H}_t + g_s \odot \mathbf{H}_s + \mathbf{H}^{(\ell)})
+\mathbf{H}^{(\ell)} = \text{LayerNorm}\!\left(g_t^{(\ell)} \odot \mathbf{H}_t^{(\ell)} + g_s^{(\ell)} \odot \mathbf{H}_s^{(\ell)} + \mathbf{H}^{(\ell-1)}\right)
 \end{equation}
 
 The residual connection and layer normalization stabilize training and enable gradient flow through deep networks.
@@ -227,23 +230,24 @@ The residual connection and layer normalization stabilize training and enable gr
 
 \subsubsection{Bayesian Aggregation and Classification}
 
-As shown in Fig.~\ref{fig:architecture}, after processing through $N=3$ ST blocks, the enriched packet representations $\mathbf{H}^{(N)} \in \mathbb{R}^{B \times L \times d_h}$ are aggregated and classified through two Bayesian components.
+As shown in Fig.~\ref{fig:architecture}, after processing through $N_{\text{blk}}=3$ ST blocks, the enriched packet representations $\mathbf{H}^{(N_{\text{blk}})} \in \mathbb{R}^{B \times L \times d_h}$ are aggregated and classified through two Bayesian components.
 
 \textbf{Bayesian Attention Pooling.}
-Given packet representations $\mathbf{H}^{(N)}$, we compute attention weights over the $L$ packets via a Bayesian linear map:
+Given packet representations $\mathbf{H}^{(N_{\text{blk}})}$, attention weights are computed over the $L$ packets via a Bayesian linear map. Here $\mathrm{BayesLin}_a:\mathbb{R}^{d_h}\to\mathbb{R}$ projects each node representation to a scalar attention score:
 \begin{equation}
-s_{b,i}=\mathrm{BayesLin}_a\!\left(\mathbf{h}^{(N)}_{b,i}\right),\qquad
-\boldsymbol{\alpha}_{b,:}=\mathrm{softmax}\!\left(\mathbf{s}_{b,:}\right),
+s_{b,i}=\mathrm{BayesLin}_a\!\left(\mathbf{h}^{(N_{\text{blk}})}_{b,i}\right),\qquad
+\boldsymbol{\alpha}_{b,:}=\mathrm{softmax}_{i=1}^{L}\!\left(\mathbf{s}_{b,:}\right),
 \label{eq:attn-weight}
 \end{equation}
-and obtain a window-level embedding by weighted aggregation:
+where softmax is computed along the packet dimension $i=1,\ldots,L$ such that $\sum_{i=1}^{L}\alpha_{b,i}=1$ for each sample $b$. The window-level embedding is obtained by weighted aggregation:
 \begin{equation}
-\mathbf{h}_{\mathrm{graph}}(b,:)=\sum_{i=1}^{L}\alpha_{b,i}\,\mathbf{h}^{(N)}_{b,i},\quad b=1,\dots,B.
+\mathbf{h}_{\mathrm{graph}}(b,:)=\sum_{i=1}^{L}\alpha_{b,i}\,\mathbf{h}^{(N_{\text{blk}})}_{b,i},\quad b=1,\dots,B.
 \label{eq:attn-pool}
 \end{equation}
 The Bayesian attention weights allow the model to express uncertainty about which packets are most informative.
 
 \textbf{Bayesian Classifier.}
+The classifier consists of two Bayesian linear layers with an intermediate hidden dimension $d_z = d_h/2 = 64$:
 \begin{equation}
 \begin{aligned}
 \mathbf{z} &= \mathrm{LayerNorm}\!\left(\GELU\!\left(\BayesLin_1(\mathbf{h}_{\mathrm{graph}})\right)\right),\\
@@ -251,25 +255,25 @@ The Bayesian attention weights allow the model to express uncertainty about whic
 \end{aligned}
 \label{eq:bayes-cls}
 \end{equation}
-where $\mathbf{o}\in\mathbb{R}^{B\times C}$ are the logits and
-$p(y=c\mid \mathbf{X},\Theta)=\softmax(\mathbf{o})_c$.
+where $\BayesLin_1:\mathbb{R}^{d_h}\to\mathbb{R}^{d_z}$, $\BayesLin_2:\mathbb{R}^{d_z}\to\mathbb{R}^{C}$, $\mathbf{o}\in\mathbb{R}^{B\times C}$ are the logits, and $p(y=c\mid \mathbf{X},\Theta)=\softmax(\mathbf{o})_c$.
 
-\textbf{Inference via MC Sampling}: As illustrated in Fig.~\ref{fig:architecture}, during inference, we perform Monte Carlo (MC) sampling to obtain the final prediction $\hat{y}$, class probabilities $\hat{p}$, and epistemic uncertainty $\mathcal{U}_{\text{epi}}$. By drawing $M$ weight samples from the variational posteriors $q(\mathbf{W})$ across all Bayesian layers, we compute the predictive distribution and quantify epistemic uncertainty through mutual information. The detailed uncertainty quantification procedure is described in Section~\ref{sec:uncertainty}.
+\textbf{Inference via MC Sampling}: As illustrated in Fig.~\ref{fig:architecture}, during inference, Monte Carlo (MC) sampling is performed to obtain the final prediction $\hat{y}$, class probabilities $\hat{p}$, and epistemic uncertainty $\mathcal{U}_{\text{epi}}$. By drawing $M$ weight samples from the variational posteriors $q(\mathbf{W})$ across all Bayesian layers, the predictive distribution is estimated and epistemic uncertainty is quantified via mutual information. The detailed uncertainty quantification procedure is described in Section~\ref{sec:uncertainty}.
 
 \subsection{Variational Inference and Training}
 
-\subsubsection{ELBO Loss Function}
+\subsubsection{Training Objective}
 
-We train BSTGCN by maximizing the evidence lower bound (ELBO), which decomposes into a reconstruction term (classification loss) and a KL divergence term (regularization):
+BSTGCN is trained by minimizing the negative evidence lower bound (negative ELBO). The standard ELBO is:
 \begin{equation}
-\mathcal{L}_{\text{ELBO}} = \mathbb{E}_{q(\Theta)}[\log p(\mathcal{D}|\Theta)] - \beta \cdot \text{KL}[q(\Theta) \| p(\Theta)]
+\text{ELBO} = \mathbb{E}_{q(\Theta)}[\log p(\mathcal{D}|\Theta)] - \text{KL}[q(\Theta) \| p(\Theta)]
 \end{equation}
+which should be maximized. Equivalently, training minimize $\mathcal{L} = -\text{ELBO}$, which decomposes into a negative log-likelihood (NLL) loss and a KL regularization term.
 
-The reconstruction term is the expected log-likelihood of the training data under the variational posterior. We use label-smoothed cross-entropy loss:
+The NLL term corresponds to label-smoothed cross-entropy loss:
 \begin{equation}
-\mathcal{L}_{\text{recon}} = -\frac{1}{N} \sum_{i=1}^N \sum_{c=1}^C \tilde{y}_{ic} \log p(y_i=c|\mathbf{x}_i, \Theta)
+\mathcal{L}_{\text{NLL}} = -\frac{1}{|\mathcal{D}_{\text{tr}}|} \sum_{i=1}^{|\mathcal{D}_{\text{tr}}|} \sum_{c=1}^C \tilde{y}_{ic} \log p(y_i=c|\mathbf{x}_i, \Theta)
 \end{equation}
-where $\tilde{y}_{ic} = (1-\alpha) y_{ic} + \alpha / C$ with smoothing factor $\alpha=0.1$. Label smoothing prevents the model from becoming overconfident and improves generalization.
+where $|\mathcal{D}_{\text{tr}}|$ is the number of training samples and $\tilde{y}_{ic} = (1-\alpha) y_{ic} + \alpha / C$ with smoothing factor $\alpha=0.1$. Label smoothing prevents the model from becoming overconfident and improves generalization.
 
 The KL divergence term measures the discrepancy between the variational posterior $q(\Theta)$ and the prior $p(\Theta)$. For Gaussian priors $p(\mathbf{W}) = \mathcal{N}(0, \sigma_{\text{prior}}^2 \mathbf{I})$ and Gaussian variational posteriors $q(\mathbf{W}) = \mathcal{N}(\boldsymbol{\mu}_W, \text{diag}(\boldsymbol{\sigma}_W^2))$, the KL divergence has a closed-form solution:
 \begin{equation}
@@ -280,24 +284,24 @@ The total KL divergence is summed over all Bayesian layers in the network.
 
 \subsubsection{KL Annealing Strategy}
 
-Directly optimizing the ELBO can lead to posterior collapse, where the KL term dominates early in training, causing the variational posterior to collapse to the prior and preventing the model from learning meaningful representations. To address this, we employ a KL annealing strategy:
+Directly minimizing the negative ELBO can lead to posterior collapse, where the KL term dominates early in training, causing the variational posterior to collapse to the prior and preventing the model from learning meaningful representations. To address this, a KL annealing strategy is employed with the total loss:
 \begin{equation}
-\mathcal{L} = \mathcal{L}_{\text{recon}} + \beta(t) \cdot \text{KL}, \quad \beta(t) = \beta_{\max} \cdot \min\left(1, \frac{t}{T_{\text{warmup}}}\right)
+\mathcal{L} = \mathcal{L}_{\text{NLL}} + \beta(t) \cdot \text{KL}, \quad \beta(t) = \beta_{\max} \cdot \min\left(1, \frac{t}{T_{\text{warmup}}}\right)
 \end{equation}
-where $\beta_{\max}=1.5\times10^{-4}$, $T_{\text{warmup}}=40$ epochs, and $t$ is the current epoch. During the warmup phase ($t < T_{\text{warmup}}$), $\beta(t)$ gradually increases from 0 to $\beta_{\max}$, allowing the model to first learn to classify accurately before regularizing the posterior.
+where $\beta_{\max}=1.5\times10^{-4}$, $T_{\text{warmup}}=40$ epochs, and $t$ is the current epoch. This loss $\mathcal{L}$ is minimized during training. During the warmup phase ($t < T_{\text{warmup}}$), $\beta(t)$ gradually increases from 0 to $\beta_{\max}$, allowing the model to first learn to classify accurately before regularizing the posterior.
 
 \subsubsection{Optimization and Regularization}
 
-We use the AdamW optimizer with learning rate $\eta=5\times10^{-4}$ and weight decay $\lambda=10^{-4}$. The learning rate follows a cosine annealing schedule with 10-epoch warmup and maximum 150 epochs. Gradient clipping with maximum norm 0.5 prevents exploding gradients. We apply dropout with rate 0.15 after each activation function for additional regularization.
+AdamW optimizer is used with learning rate $\eta=5\times10^{-4}$ and weight decay $\lambda=10^{-4}$. The learning rate follows a cosine annealing schedule with 10-epoch warmup and maximum 150 epochs. Gradient clipping with maximum norm 0.5 prevents exploding gradients. Dropout with rate 0.15 is applied after each activation function for additional regularization.
 
-To address class imbalance in the 5G-NIDD dataset, we use inverse frequency weighting: $w_c = N / (C \cdot N_c)$, where $N$ is the total number of samples, $C=9$ is the number of classes, and $N_c$ is the number of samples in class $c$. For extremely rare classes (e.g., ICMPFlood with only 173 samples), we apply additional weight boosting.
+To address class imbalance in the 5G-NIDD dataset, inverse frequency weighting is used: $w_c = |\mathcal{D}_{\text{tr}}| / (C \cdot |\mathcal{D}_c|)$, where $|\mathcal{D}_{\text{tr}}|$ is the total number of training samples, $C=9$ is the number of classes, and $|\mathcal{D}_c|$ is the number of samples in class $c$. For extremely rare classes (e.g., ICMPFlood with only 173 samples), additional weight boosting is applied.
 
 \subsection{Uncertainty Quantification}
 \label{sec:uncertainty}
 
 \subsubsection{Monte Carlo Sampling}
 
-At inference time, we quantify predictive uncertainty through Monte Carlo (MC) sampling. For each input $\mathbf{X}$, we draw $M$ parameter samples from the variational posterior $q(\Theta)$ and compute $M$ predictions:
+At inference time, predictive uncertainty is qualified through Monte Carlo (MC) sampling. For each input $\mathbf{X}$, $M$ parameter samples are drawn from the variational posterior $q(\Theta)$, yielding $M$ predictions:
 \begin{equation}
 \Theta^{(m)} \sim q(\Theta), \quad p^{(m)} = p(y|\mathbf{X}, \Theta^{(m)}), \quad m=1,\ldots,M
 \end{equation}
@@ -309,24 +313,28 @@ The predictive distribution is approximated by the empirical average:
 
 The final prediction is $\hat{y} = \arg\max_c \bar{p}_c$.
 
-\subsubsection{Epistemic Uncertainty via Mutual Information}
+\subsubsection{Uncertainty Decomposition via Mutual Information}
 
-We quantify epistemic uncertainty (model uncertainty) using mutual information between predictions and model parameters:
-\begin{equation}
-\mathcal{U}_{\text{epi}}(\mathbf{X}) = \mathcal{H}\left[\mathbb{E}_{\Theta}[p(y|\mathbf{X},\Theta)]\right] - \mathbb{E}_{\Theta}\left[\mathcal{H}[p(y|\mathbf{X},\Theta)]\right]
-\end{equation}
-where $\mathcal{H}[p] = -\sum_c p_c \log p_c$ is the entropy. The first term measures the entropy of the average prediction (total uncertainty), while the second term measures the average entropy of individual predictions (aleatoric uncertainty). Their difference captures epistemic uncertainty: high values indicate that different parameter samples produce divergent predictions, suggesting the model is uncertain about the input.
-
-In practice, we compute:
+Predictive uncertainty is decomposed into epistemic (model uncertainty) and aleatoric (data noise) components using mutual information. Let $\mathcal{H}[p] = -\sum_c p_c \log p_c$ denote entropy. The following quantities are defined:
 \begin{align}
-\mathcal{U}_{\text{epi}} &= -\sum_c \bar{p}_c \log \bar{p}_c + \frac{1}{M} \sum_{m=1}^M \sum_c p_c^{(m)} \log p_c^{(m)}
+\mathcal{U}_{\text{tot}}(\mathbf{X}) &\triangleq \mathcal{H}[\bar{p}] = \mathcal{H}\left[\mathbb{E}_{\Theta}[p(y|\mathbf{X},\Theta)]\right] \quad \text{(total uncertainty)} \\
+\mathcal{U}_{\text{ale}}(\mathbf{X}) &\triangleq \mathbb{E}_{\Theta}\left[\mathcal{H}[p(y|\mathbf{X},\Theta)]\right] \quad \text{(aleatoric uncertainty)} \\
+\mathcal{U}_{\text{epi}}(\mathbf{X}) &\triangleq \mathcal{U}_{\text{tot}}(\mathbf{X}) - \mathcal{U}_{\text{ale}}(\mathbf{X}) \quad \text{(epistemic uncertainty)}
+\end{align}
+The total uncertainty measures entropy of the average prediction. The aleatoric uncertainty measures average entropy of individual predictions (irreducible noise). Their difference---the epistemic uncertainty---captures model uncertainty: high values indicate that different parameter samples produce divergent predictions, suggesting the model is unfamiliar with the input.
+
+In practice, the following Monte Carlo estimators are used:
+\begin{align}
+\mathcal{U}_{\text{tot}} &= -\sum_c \bar{p}_c \log \bar{p}_c \\
+\mathcal{U}_{\text{ale}} &= -\frac{1}{M} \sum_{m=1}^M \sum_c p_c^{(m)} \log p_c^{(m)} \\
+\mathcal{U}_{\text{epi}} &= \mathcal{U}_{\text{tot}} - \mathcal{U}_{\text{ale}}
 \end{align}
 
-We use PyTorch's \texttt{torch.special.entr} function to handle the case $p=0$ gracefully.
+PyTorch's \texttt{torch.special.entr} function is used to handle the case $p=0$ gracefully.
 
 \subsubsection{Adaptive Monte Carlo Sampling}
 
-Standard MC inference requires a fixed number of samples (e.g., $M=30$), which can be computationally expensive. We propose an adaptive sampling strategy that adjusts the number of samples based on the model's confidence:
+Standard MC inference requires a fixed number of samples (e.g., $M=30$), which can be computationally expensive.An adaptive sampling strategy is adopted to adjust the number of samples based on the model's confidence:
 
 \begin{algorithm}[H]
 \caption{Adaptive Monte Carlo Sampling}
@@ -344,11 +352,11 @@ Standard MC inference requires a fixed number of samples (e.g., $M=30$), which c
 \end{algorithmic}
 \end{algorithm}
 
-For samples where the model is highly confident and uncertainty is low (e.g., typical benign traffic), 3 samples suffice. For uncertain samples (e.g., boundary cases, novel attacks), we use the full 30 samples to accurately estimate uncertainty. This strategy reduces validation time by approximately 60\% while maintaining classification performance.
+For samples where the model is highly confident and uncertainty is low (e.g., typical benign traffic), 3 samples suffice. For uncertain samples (e.g., boundary cases, novel attacks), the full 30 samples are used to accurately estimate uncertainty. This strategy reduces validation time by approximately 60\% while maintaining classification performance.
 
 \subsubsection{Temperature Scaling for Calibration}
 
-MC-averaged predictions from Bayesian neural networks tend to be underconfident (conservative) because averaging over multiple weight samples produces flatter probability distributions compared to deterministic softmax outputs. To improve calibration, we apply temperature scaling~\cite{Guo_Calibration_2017} as a post-processing step:
+MC-averaged predictions from Bayesian neural networks tend to be underconfident (conservative) because averaging over multiple weight samples produces flatter probability distributions compared to deterministic softmax outputs. To improve calibration, temperature scaling~\cite{Guo_Calibration_2017} is used as a post-processing step:
 \begin{equation}
 \bar{p}_c^{\text{scaled}} = \frac{\exp(\log \bar{p}_c / T)}{\sum_{c'} \exp(\log \bar{p}_{c'} / T)}
 \end{equation}
@@ -356,9 +364,9 @@ where $T$ is a temperature parameter learned on the validation set by minimizing
 
 \subsubsection{Deep Ensemble for Enhanced OOD Detection}
 
-While a single BSTGCN model provides uncertainty estimates through MC sampling over weight distributions, we further improve out-of-distribution (OOD) detection by employing a Deep Ensemble strategy~\cite{Lakshminarayanan2017Ensemble}. Deep Ensembles train multiple independent models with different random initializations, capturing diverse modes of the posterior distribution that a single model may miss.
+While a single BSTGCN model provides uncertainty estimates through MC sampling over weight distributions, out-of-distribution (OOD) detection is further improved by employing a Deep Ensemble strategy~\cite{Lakshminarayanan2017Ensemble}. Deep Ensembles train multiple independent models with different random initializations, capturing diverse modes of the posterior distribution that a single model may miss.
 
-Given $K$ independently trained BSTGCN models $\{f_1, \ldots, f_K\}$, each initialized with a different random seed, we perform ensemble inference as follows:
+Given $K$ independently trained BSTGCN models $\{f_1, \ldots, f_K\}$, each initialized with a different random seed, ensemble inference is performed as follows:
 \begin{enumerate}
 \item For each model $f_k$, perform $M$ MC samples to obtain predictions $\{p_k^{(m)}\}_{m=1}^M$
 \item Compute the model-level average: $\bar{p}_k = \frac{1}{M} \sum_{m=1}^M p_k^{(m)}$
@@ -372,13 +380,13 @@ The epistemic uncertainty is computed using mutual information over the ensemble
 
 This formulation captures two sources of epistemic uncertainty: (1) within-model uncertainty from MC sampling over weight distributions, and (2) between-model uncertainty from different random initializations. The combination provides more robust uncertainty estimates, particularly for OOD samples where different models may disagree significantly.
 
-In our experiments, we use $K=7$ models and $M=50$ MC samples per model. The ensemble can further improve OOD detection beyond single-model BSTGCN (average AUROC 0.878) at the cost of 7$\times$ training time and $K \times M$ forward passes during inference.
+In experiments, $K=7$ models are used with $M=50$ MC samples per model. The ensemble can further improve OOD detection beyond single-model BSTGCN (average AUROC 0.878) at the cost of 7$\times$ training time and $K \times M$ forward passes during inference.
 
 \section{Experimental Setup}
 
 \subsection{Dataset}
 
-We evaluate BSTGCN on the 5G-NIDD (5G Network Intrusion Detection Dataset), which contains real traffic collected from two 5G base stations. The dataset comprises 1,215,890 flow records covering 1 benign class and 8 attack types. Instead of using pre-aggregated flow-level statistics, we directly process raw pcapng capture files to preserve fine-grained packet-level information. Table~\ref{tab:dataset} shows the class distribution at both flow and packet levels.
+BSTGCN is evaluated on the 5G-NIDD (5G Network Intrusion Detection Dataset), which contains real traffic collected from two 5G base stations. The dataset comprises 1,215,890 flow records covering 1 benign class and 8 attack types. Instead of using pre-aggregated flow-level statistics, raw pcapng capture files are directly processed to preserve fine-grained packet-level information. Table~\ref{tab:dataset} shows the class distribution at both flow and packet levels.
 
 \begin{table}[!t]
 \caption{5G-NIDD Dataset: Flow vs. Packet Distribution\label{tab:dataset}}
@@ -406,17 +414,17 @@ Total           & 1,215,890 & 100 & 5,363,314 & 100 \\
 
 Table~\ref{tab:dataset} reveals a distribution discrepancy between flows and packets: Benign traffic accounts for 41.0\% of flows but only 0.37\% of packets, because benign SSH sessions consist of short-lived interactive flows ($\sim$0.04 packets/flow) while attack traffic generates far more packets per flow (ICMPFlood: $\sim$526 packets/flow). The packet-level distribution more accurately reflects actual network load, motivating our packet-based approach.
 
-\textbf{Flow length analysis (Evidence for Principle P1):} To quantify the limitation of flow-based methods, we analyze the cumulative distribution of packets per flow. In the 5G-NIDD dataset, 78.3\% of flows contain fewer than 10 packets, with median flow length of only 4 packets. This ``short-flow dominance'' is characteristic of 5G core networks where signaling flows, DNS queries, and connection setup/teardown generate numerous brief sessions. Flow-based detection faces three consequences: (a) \textit{insufficient context}---aggregating $<$10 packets provides weak statistical features; (b) \textit{detection latency}---waiting for flow termination delays response; (c) \textit{state explosion}---maintaining per-flow tables for $M$ concurrent flows incurs $O(M)$ memory and $O(M \cdot r)$ update overhead where $r$ is packet arrival rate. Our stateless sliding window approach sidesteps all three issues by processing packets in arrival order without flow reconstruction.
+\textbf{Flow length analysis (Evidence for Principle P1):} To quantify the limitation of flow-based methods, the cumulative distribution of packets per flow is under analysis. In the 5G-NIDD dataset, 78.3\% of flows contain fewer than 10 packets, with median flow length of only 4 packets. This ``short-flow dominance'' is characteristic of 5G core networks where signaling flows, DNS queries, and connection setup/teardown generate numerous brief sessions. Flow-based detection faces three consequences: (a) \textit{insufficient context}---aggregating $<$10 packets provides weak statistical features; (b) \textit{detection latency}---waiting for flow termination delays response; (c) \textit{state explosion}---maintaining per-flow tables for $M_{\text{flow}}$ concurrent flows incurs $O(M_{\text{flow}})$ memory and $O(M_{\text{flow}} \cdot r)$ update overhead where $r$ is packet arrival rate. Stateless sliding window approach sidesteps all three issues by processing packets in arrival order without flow reconstruction.
 
-\noindent Packets are organized by global capture timestamp (not grouped by flow), and we apply a sliding window to construct samples. For each pcapng file containing $N$ packets, we extract samples using:
+\noindent Packets are organized by global capture timestamp (not grouped by flow), and a sliding window is used to construct samples. For each pcapng file containing $N_{\text{pkt}}$ packets, samples are extracted using:
 \begin{equation}
-\text{num\_samples} = \left\lfloor \frac{N - L}{s} \right\rfloor + 1
+\text{num\_samples} = \left\lfloor \frac{N_{\text{pkt}} - L}{s} \right\rfloor + 1
 \end{equation}
 where $L$ is the window length (packets per sample) and $s$ is the stride. Each window contains packets from multiple concurrent network flows, representing a short-term traffic snapshot.
 
 \textbf{Feature engineering}: Each packet is characterized by 23 optimized features: (1) \textit{temporal}: relative timestamp within the window; (2) \textit{size}: packet length; (3) \textit{protocol}: TCP/UDP/ICMP indicator; (4) \textit{IP addresses}: source and destination IPs encoded as 4 separate bytes (0-255 range each) instead of 32-bit integers to ensure uniform feature scaling; (5) \textit{ports}: source and destination port numbers; (6) \textit{IP header}: TTL, ToS, flags; (7) \textit{TCP header}: SYN/ACK/PSH flags, window size, sequence and acknowledgment numbers (modulo $10^6$); (8) \textit{ICMP}: type field. This 23-dimensional feature set was derived through variance analysis and redundancy elimination from an initial 25-dimensional set, removing near-constant features (e.g., icmp\_code with std=0.04) and redundant features (e.g., ip\_len highly correlated with packet\_length).
 
-\textbf{Window configuration}: We use 50-packet windows with stride 50 (non-overlapping), yielding 125,956 samples. This represents low-latency detection ($\approx$50 ms to the first decision at 1000 packets/s). We split the data into training (70\%, 88,161 samples), validation (15\%, 18,884 samples), and test (15\%, 18,911 samples) sets using stratified random sampling to maintain class distribution.
+\textbf{Window configuration}: Non-overlapping 50-packet windows with stride 50 are used, yielding 125,956 samples. This represents low-latency detection ($\approx$50 ms to the first decision at 1000 packets/s). The data is split into training (70\%, 88,161 samples), validation (15\%, 18,884 samples), and test (15\%, 18,911 samples) sets using stratified random sampling to maintain class distribution.
 
 This stateless sliding window design requires only a fixed-length packet buffer for encoding and inference, avoiding the overhead of maintaining per-flow session state and complete NetFlow statistics, making it well-suited for high-throughput, low-latency 5G core network real-time detection.
 
@@ -424,7 +432,7 @@ The 5G-NIDD dataset is particularly suitable for evaluating spatiotemporal model
 
 \subsection{Baseline Models}
 
-We compare BSTGCN against 10 baseline models spanning four categories:
+BSTGCN is compared against 10 baseline models spanning four categories:
 
 \textbf{Temporal models}: CNN1D (1D convolutional neural network), GRU (gated recurrent unit), TCN (temporal convolutional network). These models capture temporal dependencies in packet sequences without explicit spatial modeling.
 
@@ -434,19 +442,19 @@ We compare BSTGCN against 10 baseline models spanning four categories:
 
 \textbf{Spatiotemporal models}: LSTM+GNN (sequential combination of LSTM and GNN), Seq-STGCN (Sequential Spatiotemporal GCN with \textit{serial} processing---first temporal convolution, then spatial aggregation, based on~\cite{Yu2018STGCN}), STGCN (our Spatiotemporal GCN with \textit{parallel} temporal and spatial branches, the deterministic version of BSTGCN). These models combine temporal and spatial modeling but lack uncertainty quantification. Note that STGCN uses the same architecture as BSTGCN (parallel TCN and GraphSAGE branches with gated fusion) but with deterministic weights, serving as an ablation baseline to isolate the contribution of Bayesian inference. The naming convention reflects the relationship: BSTGCN = Bayesian + STGCN.
 
-All baseline models are trained with consistent settings: batch size 64, Adam optimizer with learning rate 0.001 and weight decay $10^{-5}$, early stopping with patience 10 epochs, and class-weighted cross-entropy loss to handle class imbalance. For tree-based models (LightGBM, XGBoost), we use 100 estimators with max depth 6 and learning rate 0.1. All experiments use random seed 42 for reproducibility.
+All baseline models are trained with consistent settings: batch size 64, Adam optimizer with learning rate 0.001 and weight decay $10^{-5}$, early stopping with patience 10 epochs, and class-weighted cross-entropy loss to handle class imbalance. For tree-based models (LightGBM, XGBoost), 100 estimators with max depth 6 and learning rate 0.1 are used. All experiments use the same random seed for reproducibility.
 
 \subsection{Implementation Details}
 
 BSTGCN is implemented in PyTorch 2.0 with PyTorch Geometric. The model has 952,980 parameters, with 52.1\% in Bayesian ST blocks, 34.8\% in the Transformer encoder, and 13.1\% in pooling and classification layers. It is trained for a maximum of 200 epochs with early stopping (patience=40 epochs on validation macro F1). 
 
-Hyperparameters: hidden dimension $d_h=128$, number of ST blocks $N=3$, TCN dilation rates $\{1, 2, 4\}$, KNN neighbors $k=10$, prior standard deviation $\sigma_{\text{prior}}=1.5$, KL weight $\beta_{\max}=2\times10^{-5}$, KL warmup epochs $T_{\text{warmup}}=80$, dropout rate 0.15, label smoothing $\alpha=0.05$.
+Hyperparameters: hidden dimension $d_h=128$, number of ST blocks $N_{\text{blk}}=3$, TCN dilation rates $\{1, 2, 4\}$, KNN neighbors $k=10$, prior standard deviation $\sigma_{\text{prior}}=1.5$, KL weight $\beta_{\max}=2\times10^{-5}$, KL warmup epochs $T_{\text{warmup}}=80$, dropout rate 0.15, label smoothing $\alpha=0.05$.
 
-During training, we use $M=1$ sample per forward pass (equivalent to standard training with weight noise). During validation, we use adaptive sampling ($M_{\min}=3$, $M_{\max}=8$). During testing, we use $M=30$ samples for accurate uncertainty estimation.
+During training, $M=1$ sample is used per forward pass (equivalent to standard training with weight noise). During validation, adaptive sampling ($M_{\min}=3$, $M_{\max}=8$) is applied. During testing, $M=30$ samples are used for accurate uncertainty estimation.
 
 \subsection{Evaluation Metrics}
 
-We evaluate models from three perspectives:
+Models are evaluated from three perspectives:
 
 \textbf{Classification performance}: Accuracy, macro F1-score (unweighted average across classes), weighted F1-score (weighted by class frequency), and per-class F1-scores. Macro F1 is our primary metric as it treats all classes equally, avoiding bias toward majority classes.
 
@@ -555,19 +563,19 @@ Fig.~\ref{fig:f1_heatmap} provides a comprehensive view of per-class F1-scores a
 
 \subsection{Out-of-Distribution Detection}
 
-Identifying unknown attack types (zero-day attacks) not present in training data is essential for trustworthy intrusion detection. We evaluate BSTGCN's OOD detection capability through two complementary experiments: temporal distribution shift and leave-one-attack-out evaluation.
+Identifying unknown attack types (zero-day attacks) not present in training data is essential for trustworthy intrusion detection. BSTGCN's OOD detection capability is evaluated through two complementary experiments: temporal distribution shift and leave-one-attack-out evaluation.
 
 \subsubsection{Temporal Distribution Shift}
 
-We first conduct temporal splitting experiments: training on the first 70\% of samples (by capture timestamp) and testing on the last 30\%. Under this setting, BSTGCN achieves 89.2\% accuracy with average epistemic uncertainty of 0.142, compared to 88.1\% accuracy and 0.089 uncertainty for the deterministic STGCN model. The higher uncertainty under distribution shift indicates that BSTGCN correctly recognizes when inputs deviate from the training distribution.
+Temporal splitting experiments are first conducted by training on the first 70\% of samples (by capture timestamp) and testing on the last 30\%. Under this setting, BSTGCN achieves 89.2\% accuracy with average epistemic uncertainty of 0.142, compared to 88.1\% accuracy and 0.089 uncertainty for the deterministic STGCN model. The higher uncertainty under distribution shift indicates that BSTGCN correctly recognizes when inputs deviate from the training distribution.
 
 Using epistemic uncertainty as an OOD score, BSTGCN achieves AUROC of 0.823 for distinguishing in-distribution (random split test set) from out-of-distribution (temporal split test set) samples, significantly outperforming the deterministic baseline (AUROC 0.612 using maximum softmax probability).
 
 \subsubsection{Multi-Hold-Out Evaluation}
 
-To robustly evaluate detection of unknown attack types, we conduct a multi-hold-out experiment where three diverse attack types are separately held out as OOD test sets: (1) SlowrateDoS---low-rate attacks that exhaust server resources through minimal traffic; (2) SYNScan---reconnaissance attacks probing network services; (3) ICMPFlood---high-volume flooding attacks. This diversity tests whether uncertainty estimation generalizes across different attack patterns.
+To robustly evaluate detection of unknown attack types, a multi-hold-out experiment where three diverse attack types are separately held out as OOD test sets is conducted: (1) SlowrateDoS---low-rate attacks that exhaust server resources through minimal traffic; (2) SYNScan---reconnaissance attacks probing network services; (3) ICMPFlood---high-volume flooding attacks. This diversity tests whether uncertainty estimation generalizes across different attack patterns.
 
-For each hold-out class, the model is trained on 8 classes and evaluated on both an in-distribution (ID) test set and the held-out OOD test set. We compare BSTGCN against baseline OOD detection methods: Maximum Softmax Probability (MSP)~\cite{Hendrycks_MSP_2017}, Energy Score~\cite{Liu_Energy_2020}, Entropy, and MC Dropout~\cite{Gal_Dropout_2016}. Table~\ref{tab:ood_results} summarizes the averaged results across all three hold-out classes.
+For each hold-out class, the model is trained on 8 classes and evaluated on both an in-distribution (ID) test set and the held-out OOD test set. BSTGCN is compared against baseline OOD detection methods: Maximum Softmax Probability (MSP)~\cite{Hendrycks_MSP_2017}, Energy Score~\cite{Liu_Energy_2020}, Entropy, and MC Dropout~\cite{Gal_Dropout_2016}. Table~\ref{tab:ood_results} summarizes the averaged results across all three hold-out classes.
 
 \begin{table}[!t]
 \caption{Multi-Hold-Out OOD Detection Results (Averaged over SlowrateDoS, SYNScan, ICMPFlood)\label{tab:ood_results}}
@@ -590,7 +598,7 @@ Epistemic  & BSTGCN    & \textbf{0.878}$\pm$0.04 & \textbf{0.444}$\pm$0.21 & \te
 
 The results demonstrate several important findings:
 
-\textbf{BSTGCN achieves highest average AUROC}: Across all three hold-out attack types (SlowrateDoS: 0.829, SYNScan: 0.883, ICMPFlood: 0.922), BSTGCN achieves the best average AUROC (0.878$\pm$0.04), outperforming STGCN+MC Dropout (0.856$\pm$0.04) and XGBoost+Entropy (0.812$\pm$0.05). The variation in AUPR across attack types (SlowrateDoS: 0.54, SYNScan: 0.15, ICMPFlood: 0.64) is caused by class imbalance: SYNScan comprises only 2.7\% of test samples (876 of 32,155), compared to 10.1\% for SlowrateDoS and 11.3\% for ICMPFlood. AUPR is known to be sensitive to class imbalance, hence we use AUROC as the primary metric.
+\textbf{BSTGCN achieves highest average AUROC}: Across all three hold-out attack types (SlowrateDoS: 0.829, SYNScan: 0.883, ICMPFlood: 0.922), BSTGCN achieves the best average AUROC (0.878$\pm$0.04), outperforming STGCN+MC Dropout (0.856$\pm$0.04) and XGBoost+Entropy (0.812$\pm$0.05). The variation in AUPR across attack types (SlowrateDoS: 0.54, SYNScan: 0.15, ICMPFlood: 0.64) is caused by class imbalance: SYNScan comprises only 2.7\% of test samples (876 of 32,155), compared to 10.1\% for SlowrateDoS and 11.3\% for ICMPFlood. AUPR is known to be sensitive to class imbalance, hence AUROC is used as the primary metric.
 
 \textbf{Bayesian methods provide consistent improvements}: MC Dropout on STGCN achieves AUROC of 0.856, demonstrating that uncertainty quantification through approximate Bayesian inference provides meaningful signals for OOD detection. BSTGCN's full variational inference further improves upon this by 2.2\% AUROC.
 
@@ -598,7 +606,7 @@ The results demonstrate several important findings:
 
 \textbf{Practical implications}: In deployment, OOD detection serves as a first-stage filter to flag suspicious samples for human review. With BSTGCN's AUROC of 0.878, security operators can effectively prioritize high-uncertainty samples for manual inspection. Combined with the risk-coverage analysis (Section V-B), this enables efficient alert triage.
 
-\textbf{Deep Ensemble as compute-heavy upper bound}: We also evaluated Deep Ensemble (5 BSTGCN models with different random seeds) on SlowrateDoS. Deep Ensemble achieves AUROC 0.859 compared to single BSTGCN's 0.829---a 3.6\% improvement. However, this comes at $5\times$ training cost and inference overhead ($K \times M = 150$ forward passes vs. $M = 30$), making it impractical for real-time detection. Single BSTGCN achieves 96.5\% of the ensemble's OOD performance at 20\% of the inference cost.
+\textbf{Deep Ensemble as compute-heavy upper bound}: Deep Ensemble (5 BSTGCN models with different random seeds) is also evaluated on SlowrateDoS. Deep Ensemble achieves AUROC 0.859 compared to single BSTGCN's 0.829---a 3.6\% improvement. However, this comes at $5\times$ training cost and inference overhead ($K \times M = 150$ forward passes vs. $M = 30$), making it impractical for real-time detection. Single BSTGCN achieves 96.5\% of the ensemble's OOD performance at 20\% of the inference cost.
 
 \subsubsection{Uncertainty Decomposition Analysis}
 
@@ -698,7 +706,7 @@ BSTGCN's risk-aware output $(\hat{y}, R(\mathbf{x}))$ enables direct integration
 
 \subsection{Limitations and Threats to Validity}
 
-\textbf{Evaluation protocol}: Our primary evaluation uses stratified random splitting, which does not simulate temporal distribution shift or cross-deployment generalization. The OOD detection experiments (temporal split, multi-hold-out) serve as \textit{stress tests} to probe capability boundaries, not as claims of production-ready zero-day detection. Future work should adopt file-level or time-block splitting to validate temporal generalization more rigorously.
+\textbf{Evaluation protocol}: The primary evaluation uses stratified random splitting, which does not simulate temporal distribution shift or cross-deployment generalization. The OOD detection experiments (temporal split, multi-hold-out) serve as \textit{stress tests} to probe capability boundaries, not as claims of production-ready zero-day detection. Future work should adopt file-level or time-block splitting to validate temporal generalization more rigorously.
 
 \textbf{Dataset representativeness}: While 5G-NIDD is the closest available dataset to 6G networks, true 6G traffic will exhibit new characteristics (terahertz communication, integrated sensing, space-air-ground networks). Transferability to 6G requires evaluation on emerging testbed data.
 
@@ -710,13 +718,13 @@ Future directions include: (1) structured priors encoding attack chain knowledge
 
 \section{Conclusion}
 
-This paper proposes BSTGCN, a framework that upgrades intrusion detection from label prediction to \textbf{risk-aware security decision support} for 5G/6G zero-trust architectures. The core insight is that trustworthy uncertainty requires both \textit{structure-preserving representation} (spatiotemporal graphs that separate ID from OOD geometrically) and \textit{principled probabilistic inference} (Bayesian learning that quantifies epistemic vs. aleatoric uncertainty). Neither alone suffices: Bayesian inference on unstructured representations yields unreliable uncertainty; deterministic models on structured representations still produce overconfident errors.
+This paper proposes BSTGCN, a framework that upgrades intrusion detection from label prediction to risk-aware security decision support for 5G/6G zero-trust architectures. The core insight is that trustworthy uncertainty requires both \textit{structure-preserving representation} (spatiotemporal graphs that separate ID from OOD geometrically) and \textit{principled probabilistic inference} (Bayesian learning that quantifies epistemic vs. aleatoric uncertainty). Neither alone suffices: Bayesian inference on unstructured representations yields unreliable uncertainty; deterministic models on structured representations still produce overconfident errors.
 
-BSTGCN realizes this synergy through four design principles: (P1) stateless packet-level processing avoiding $O(M)$ flow table overhead; (P2) parallel TCN and GraphSAGE branches preserving temporal and spatial attack structure; (P3) variational inference enabling decomposable, calibrated uncertainty and risk score computation; (P4) adaptive MC sampling reducing inference cost by 60\%.
+BSTGCN realizes this synergy through four design principles: (P1) stateless packet-level processing avoiding $O(M_{\text{flow}})$ flow table overhead; (P2) parallel TCN and GraphSAGE branches preserving temporal and spatial attack structure; (P3) variational inference enabling decomposable, calibrated uncertainty and risk score computation; (P4) adaptive MC sampling reducing inference cost by 60\%.
 
 On 5G-NIDD, BSTGCN achieves 96.74\% accuracy, 91.65\% macro F1, and ECE=0.0041 (51\% better than MC Dropout). For OOD detection across three held-out attack types, BSTGCN achieves AUROC 0.878$\pm$0.04, outperforming baselines. Critically, processing the top 20\% of alerts (ranked by risk score) covers 80\% of true attacks, demonstrating operational value for security workflows.
 
-As 6G networks evolve toward AI-native architectures, ensuring that AI security functions are themselves trustworthy becomes a first-order concern. BSTGCN represents a step toward this goal by providing not just accurate predictions, but \textit{mathematically rigorous risk scores} that support continuous verification, alert prioritization, and human-in-the-loop decision-making.
+As 6G networks evolve toward AI-native architectures, ensuring that AI security functions are themselves trustworthy becomes a first-order concern. BSTGCN represents a step toward this goal by providing not just accurate predictions, but mathematically rigorous risk scores that support continuous verification, alert prioritization, and human-in-the-loop decision-making.
 
 \section*{Acknowledgments}
 The authors would like to thank the contributors of the 5G-NIDD dataset for making their data publicly available. This work was supported by [Funding Agency] under Grant [Grant Number]. We also thank the anonymous reviewers for their constructive feedback that helped improve this paper.
